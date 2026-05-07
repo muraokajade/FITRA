@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-
+import LoadingLink from "@/components/LoadingLink";
 export default function TrainingPage() {
   const router = useRouter();
 

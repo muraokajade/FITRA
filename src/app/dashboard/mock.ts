@@ -83,3 +83,11 @@ export const mockTodos: TodoItem[] = [
     label: "就寝・起床時間や疲労感を /life に入力してコンディション診断",
   },
 ];
+
+export const mockScoreTrend = [
+  { date: "05-03", score: 72 },
+  { date: "05-04", score: 74 },
+  { date: "05-05", score: 75 },
+  { date: "05-06", score: 77 },
+  { date: "05-07", score: 78 },
+];

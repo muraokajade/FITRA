@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useLocalStorageState } from "@/hooks/useLocalStorageState";
-
+import LoadingLink from "@/components/LoadingLink";
 import type { UserLevel, UserGoal } from "@/types/user";
 import type { TempMeal } from "@/types/tempMeal";
 
@@ -223,8 +223,9 @@ ${images.length}枚
 - 画像がある場合、画像内の食品を必ず確認してください。
 - 食品名だけで評価を完結させないでください。
 - 画像だけで評価を完結させないでください。
-- 入力食品名と画像内食品が異なる場合、両方を認識した食事名に含めてください。
+- 入力食品名と画像内食品が異なる場合、認識した食事名には必ず両方を含めてください。
 - 認識した食事名には、入力食品名・補足・画像から推定した食品を統合して出力してください。
+- 例：入力食品名が「梨」、画像が「リンゴ」の場合、認識した食事名は「梨、リンゴ」としてください。
 - 存在しない食品は推測しすぎないでください。
 - 皿、容器、背景は食品として扱わないでください。`
       );
@@ -253,7 +254,10 @@ ${images.length}枚
           ? Array.from(
               new Set([
                 ...analysisFoodItems,
-                ...detectedName.split(/[、,]/).map((item) => item.trim()).filter(Boolean),
+                ...detectedName
+                  .split(/[、,]/)
+                  .map((item) => item.trim())
+                  .filter(Boolean),
               ])
             )
           : analysisFoodItems.length > 0

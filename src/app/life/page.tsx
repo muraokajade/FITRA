@@ -5,7 +5,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-
+import LoadingLink from "@/components/LoadingLink";
 import type { AiFeedbackRequest } from "@/types/ai";
 import type { LifeSummary } from "@/types/life";
 import type { UserLevel, UserGoal } from "@/types/user";
