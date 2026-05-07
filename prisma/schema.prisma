@@ -1,0 +1,88 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id      String           @id @default(cuid())
+  name    String
+  records TrainingRecord[]
+}
+
+model TrainingRecord {
+  id        String        @id @default(cuid())
+  userId    String
+  date      String
+  createdAt DateTime      @default(now())
+  exercise  String
+  reps      Int
+  sets      Int
+  volume    Float
+  weight    Float
+  user      User          @relation(fields: [userId], references: [id])
+  rows      TrainingRow[]
+}
+
+model TrainingRow {
+  id        String         @id @default(cuid())
+  name      String
+  weight    Int
+  reps      Int
+  sets      Int
+  createdAt DateTime       @default(now())
+  volume    Int
+  recordId  String
+  record    TrainingRecord @relation(fields: [recordId], references: [id])
+}
+
+model WorkoutSession {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  mode      String
+  status    String
+  startedAt DateTime
+  endedAt   DateTime?
+  totalVolume Int?
+}
+
+model ExerciseLog {
+  id           Int      @id @default(autoincrement())
+  sessionId    Int
+  exerciseName String
+  weight       Int
+  reps         Int
+  setNumber    Int
+  volume       Int
+  createdAt    DateTime @default(now())
+  memo         String?
+}
+
+model MealLog {
+  id            String     @id @default(cuid())
+  name          String
+  createdAt     DateTime   @default(now())
+  mealType      String
+  timestamp     DateTime
+  score         Int?
+  totalCalories Float?
+  totalFat      Float?
+  totalCarbs    Float?
+  totalProtein  Float?
+  items         FoodItem[]
+}
+
+model FoodItem {
+  id       String  @id @default(cuid())
+  mealId   String
+  name     String
+  amount   Float?
+  calories Float?
+  protein  Float?
+  fat      Float?
+  carbs    Float?
+  meal     MealLog @relation(fields: [mealId], references: [id])
+}

@@ -1,0 +1,31 @@
+-- CreateTable
+CREATE TABLE "MealLog" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "mealType" TEXT NOT NULL,
+    "timestamp" TIMESTAMP(3) NOT NULL,
+    "totalCalories" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "totalFat" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "totalCarbs" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "totalProtein" DOUBLE PRECISION NOT NULL DEFAULT 0,
+
+    CONSTRAINT "MealLog_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "FoodItem" (
+    "id" TEXT NOT NULL,
+    "mealId" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "amount" DOUBLE PRECISION NOT NULL,
+    "calories" DOUBLE PRECISION NOT NULL,
+    "protein" DOUBLE PRECISION NOT NULL,
+    "fat" DOUBLE PRECISION NOT NULL,
+    "carbs" DOUBLE PRECISION NOT NULL,
+
+    CONSTRAINT "FoodItem_pkey" PRIMARY KEY ("id")
+);
+
+-- AddForeignKey
+ALTER TABLE "FoodItem" ADD CONSTRAINT "FoodItem_mealId_fkey" FOREIGN KEY ("mealId") REFERENCES "MealLog"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
