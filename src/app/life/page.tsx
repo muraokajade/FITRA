@@ -85,8 +85,8 @@ export default function LifePage() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white flex items-center justify-center px-4 py-10">
-      <div className="max-w-3xl w-full bg-slate-900/70 rounded-2xl shadow-xl border border-slate-800 px-6 py-6 md:px-10 md:py-8 space-y-8">
+    <main className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-emerald-950 px-4 py-8 text-white flex items-center justify-center">
+      <div className="w-full max-w-5xl space-y-8 rounded-2xl border border-slate-800 bg-slate-900/70 px-6 py-6 shadow-xl md:px-10 md:py-8">
         {/* ヘッダー */}
         <header className="flex items-start justify-between gap-4">
           <div className="space-y-3">
@@ -109,12 +109,25 @@ export default function LifePage() {
             </p>
           </div>
 
-          <Link
-            href="/"
-            className="hidden sm:inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900/80 px-3 py-1.5 text-xs font-medium text-slate-200 hover:border-emerald-400 hover:text-emerald-200 transition"
-          >
-            ← ホームへ戻る
-          </Link>
+          <div className="hidden sm:flex items-center gap-3">
+
+            <LoadingLink
+              href="/dashboard"
+              theme="life"
+              className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-200 transition hover:bg-emerald-500/20"
+            >
+              ← Dashboard
+            </LoadingLink>
+
+            <LoadingLink
+              href="/"
+              theme="home"
+              className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900/80 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:border-emerald-400 hover:text-emerald-200"
+            >
+              ← Home
+            </LoadingLink>
+
+          </div>
         </header>
 
         {/* 入力エリア */}

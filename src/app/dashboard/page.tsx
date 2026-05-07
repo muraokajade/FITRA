@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import LoadingLink from "@/components/LoadingLink";
 import { useMemo } from "react";
 import {
@@ -32,6 +31,7 @@ export default function DashboardPage() {
               <h1 className="text-3xl md:text-5xl font-black tracking-tight">
                 Future Body Scanner
               </h1>
+
               <p className="mt-2 text-sm text-slate-400">
                 Training / Diet / Life の3AIから、今日の身体状態を統合解析しました。
               </p>
@@ -57,6 +57,7 @@ export default function DashboardPage() {
             <div className="mt-4 flex items-center gap-5">
               <div className="relative flex h-28 w-28 items-center justify-center rounded-full bg-slate-900">
                 <div className="absolute inset-1 rounded-full bg-gradient-to-br from-blue-500/80 to-cyan-400/60 blur-[3px]" />
+
                 <div className="relative flex h-[88px] w-[88px] items-center justify-center rounded-full bg-[#05060a]">
                   <span className="text-4xl font-black text-blue-300">
                     {today.overallScore}
@@ -68,6 +69,7 @@ export default function DashboardPage() {
                 <p className="text-slate-300">
                   3つのAIスコアから、今日のコンディションを総合評価。
                 </p>
+
                 <p className="text-blue-300">3日前より +6 上昇</p>
 
                 <div className="h-2 w-full overflow-hidden rounded-full bg-slate-800">
@@ -94,12 +96,14 @@ export default function DashboardPage() {
               href="/diet"
               theme="diet"
             />
+
             <QuickNavCard
               label="Training AI"
               desc="強度・成長・負荷バランス"
               href="/training"
               theme="training"
             />
+
             <QuickNavCard
               label="Life AI"
               desc="睡眠・疲労・ストレス"
@@ -113,6 +117,7 @@ export default function DashboardPage() {
         <section className="rounded-2xl border border-blue-500/20 bg-[#0b0f16] p-5 shadow-lg shadow-black/40">
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
+
             <p className="text-xs tracking-[0.2em] text-blue-200">
               SCAN RESULT
             </p>
@@ -143,6 +148,7 @@ export default function DashboardPage() {
             title="昨日のAI解析結果"
             items={mockYesterdayImprovement.details}
           />
+
           <ImprovementCard
             title="今日の最適行動"
             items={mockTodaySuggestion.details}
@@ -156,6 +162,7 @@ export default function DashboardPage() {
             <h2 className="text-sm font-semibold text-slate-100">
               今日のアクションリスト
             </h2>
+
             <p className="mt-1 text-[11px] text-slate-400">
               入力すると、身体スキャナーの精度が上がります。
             </p>
@@ -177,6 +184,7 @@ export default function DashboardPage() {
             <h2 className="text-sm font-semibold text-slate-100">
               最新の解析履歴
             </h2>
+
             <p className="mt-1 text-[11px] text-slate-400">
               直近のAI解析結果です。
             </p>
@@ -242,11 +250,13 @@ function QuickNavCard({
     >
       <div>
         <p className={`text-[11px] font-semibold ${textColor}`}>{label}</p>
+
         <p className="mt-1 text-[11px] text-slate-400">{desc}</p>
       </div>
 
       <div className="mt-4 flex items-center justify-between">
         <span className={`text-[11px] ${textColor}`}>解析する →</span>
+
         <span
           className={`h-6 w-6 rounded-full bg-gradient-to-br ${themeClasses} opacity-70 blur-[1px] group-hover:opacity-100`}
         />
@@ -271,6 +281,7 @@ function ImprovementCard({
       }`}
     >
       <h2 className="text-sm font-semibold text-slate-100">{title}</h2>
+
       <ul className="mt-3 space-y-2 text-xs text-slate-200">
         {items.map((text, idx) => (
           <li key={idx} className="flex gap-2">
@@ -313,7 +324,9 @@ function HistoryRow({ item }: { item: HistoryItem }) {
     >
       <div className="flex flex-col gap-1">
         <span className="text-[11px] text-slate-400">{item.date}</span>
-        <span className="text-xs font-medium text-slate-100">{item.title}</span>
+        <span className="text-xs font-medium text-slate-100">
+          {item.title}
+        </span>
         <span className="text-[11px] text-slate-400">{label}</span>
       </div>
 
