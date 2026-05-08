@@ -204,6 +204,28 @@ export default function LifePage() {
 
         {/* 結果表示 */}
         <section className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-4">
+            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5">
+              <p className="text-xs text-emerald-200">RECOVERY SCORE</p>
+              <p className="mt-2 text-4xl font-black text-emerald-300">70</p>
+              <p className="mt-1 text-xs text-slate-400">今日は回復優先</p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-700 bg-slate-900/70 p-5">
+              <p className="text-xs text-slate-400">睡眠</p>
+              <p className="mt-2 text-2xl font-bold text-white">{sleep}h</p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-700 bg-slate-900/70 p-5">
+              <p className="text-xs text-slate-400">疲労</p>
+              <p className="mt-2 text-2xl font-bold text-white">{fatigue}/10</p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-700 bg-slate-900/70 p-5">
+              <p className="text-xs text-slate-400">ストレス</p>
+              <p className="mt-2 text-2xl font-bold text-white">{stress}/10</p>
+            </div>
+          </div>
           <h2 className="text-sm font-medium text-slate-200">AIコメント</h2>
 
           {error && (

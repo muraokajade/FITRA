@@ -14,6 +14,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import { getExerciseLabel } from "@/utils/exerciseLabel";
+import LoadingLink from "@/components/LoadingLink";
 
 type TrainingRecord = {
   id: string;
@@ -228,224 +229,333 @@ ${topExercise ? `直近で一番伸びた種目：${topExercise.label}` : ""}
     alert("コピーしました");
   };
 
-  return (
-    <main className="min-h-screen bg-slate-950 px-4 py-8 text-slate-50">
-      <div className="mx-auto max-w-5xl space-y-6">
+return (
+  <main className="min-h-screen bg-slate-950 px-4 py-8 text-slate-50">
+    <div className="mx-auto max-w-5xl space-y-6">
+
+      {/* HEADER */}
+      <div className="flex items-start justify-between gap-4">
+
+        {/* LEFT */}
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-sky-400">
             FITRA / TRAINING DASHBOARD
           </p>
-          <h1 className="mt-2 text-3xl font-bold">成長ダッシュボード</h1>
+
+          <h1 className="mt-2 text-3xl font-bold">
+            成長ダッシュボード
+          </h1>
+
           <p className="mt-2 text-sm text-slate-400">
             数値だけでなく、直近の伸び方をグラフで確認できます。
           </p>
         </div>
 
-        <Card className="border-slate-700 bg-slate-900/80">
-          <CardContent className="grid gap-4 p-6 sm:grid-cols-3">
-            <div className="rounded-2xl border border-sky-500/30 bg-sky-500/10 p-5">
-              <p className="text-sm text-slate-300">総ボリューム</p>
-              <p className="mt-1 text-3xl font-bold text-sky-300">
-                {totalVolume.toLocaleString()}kg
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5">
-              <p className="text-sm text-slate-300">直近で一番伸びた種目</p>
-              <p className="mt-1 text-2xl font-bold text-emerald-300">
-                {topExercise ? topExercise.label : "-"}
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-pink-500/30 bg-pink-500/10 p-5">
-              <p className="text-sm text-slate-300">AIコメント</p>
-              <p className="mt-1 text-sm text-pink-200">
-                {insight
-                  ? insight
-                  : topExercise
-                  ? `${topExercise.label}が今回もっとも伸びています。次回もこの流れで狙えます。`
-                  : "まずは数回分の記録をためると分析できます。"}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          {bodyParts.map((part) => (
-            <button
-              key={part}
-              onClick={() => setSelectedBodyPart(part)}
-              className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-bold transition ${
-                selectedBodyPart === part
-                  ? "bg-sky-400 text-slate-950"
-                  : "bg-slate-800 text-slate-300"
-              }`}
-            >
-              {part === "all" ? "全て" : part}
-            </button>
-          ))}
+        {/* RIGHT */}
+        <div className="flex items-center gap-3">
+          <LoadingLink
+            href="/"
+            theme="home"
+            className="rounded-full border border-sky-500/30 bg-sky-500/10 px-4 py-2 text-xs font-semibold text-sky-200 hover:bg-sky-500/20 transition"
+          >
+            ← Home
+          </LoadingLink>
         </div>
 
-        {loading ? (
-          <p className="text-slate-400">読み込み中...</p>
-        ) : filteredRecords.length === 0 ? (
-          <Card className="border-slate-700 bg-slate-900/80">
-            <CardContent className="p-6">
-              <p className="text-slate-400">まだ記録がありません。</p>
-              <Button className="mt-4" onClick={() => router.push("/training/step1")}>
-                記録を開始する
-              </Button>
-            </CardContent>
-          </Card>
-        ) : displayedExercises.length === 0 ? (
-          <Card className="border-slate-700 bg-slate-900/80">
-            <CardContent className="p-6">
-              <p className="text-slate-400">
-                この部位の記録はまだありません。
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-4">
-            {displayedExercises.map((exercise) => {
-              const history = getExerciseHistory(filteredRecords, exercise);
+      </div>
 
-              const chartData = history.slice(-5).map((r) => ({
-                date: r.date.slice(5),
-                weight: r.weight,
-              }));
+      {/* TOP CARDS */}
+      <Card className="border-slate-700 bg-slate-900/80">
+        <CardContent className="grid gap-4 p-6 sm:grid-cols-3">
 
-              const { current, prev } = getLatestPair(filteredRecords, exercise);
-              if (!current) return null;
+          <div className="rounded-2xl border border-sky-500/30 bg-sky-500/10 p-5">
+            <p className="text-sm text-slate-300">総ボリューム</p>
 
-              const currentSummary = {
-                weight: current.weight,
-                reps: Math.round(current.reps),
-                sets: current.sets,
-              };
-
-              const prevSummary = prev
-                ? {
-                    weight: prev.weight,
-                    reps: Math.round(prev.reps),
-                    sets: prev.sets,
-                  }
-                : null;
-
-              const diff = prevSummary
-                ? {
-                    weight: currentSummary.weight - prevSummary.weight,
-                    reps: currentSummary.reps - prevSummary.reps,
-                    sets: currentSummary.sets - prevSummary.sets,
-                  }
-                : null;
-
-              const improved =
-                diff &&
-                (diff.weight > 0 || diff.reps > 0 || diff.sets > 0);
-
-              return (
-                <Card key={exercise} className="border-slate-700 bg-slate-900/80">
-                  <CardContent className="space-y-5 p-6">
-                    <div className="flex items-center justify-between gap-4">
-                      <div>
-                        <h2 className="text-xl font-bold">
-                          {getExerciseLabel(exercise)}
-                        </h2>
-
-                        <div>
-                          <p className="text-sm text-slate-400">
-                            今回：{currentSummary.weight}kg ×{" "}
-                            {currentSummary.reps}rep × {currentSummary.sets}
-                            セット
-                          </p>
-
-                          {diff && (
-                            <div className="mt-2 text-sm">
-                              <p>
-                                重量：{diff.weight >= 0 ? "+" : ""}
-                                {diff.weight}kg
-                              </p>
-                              <p>
-                                rep：{diff.reps >= 0 ? "+" : ""}
-                                {diff.reps}
-                              </p>
-                              <p>
-                                セット：{diff.sets >= 0 ? "+" : ""}
-                                {diff.sets}セット
-                              </p>
-                              <p>{improved ? "🔥 向上" : "→ 維持/低下"}</p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="h-56 rounded-xl border border-slate-700 bg-slate-950 p-4">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={chartData}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                          <XAxis dataKey="date" stroke="#94a3b8" />
-                          <YAxis
-                            stroke="#94a3b8"
-                            domain={["dataMin - 5", "dataMax + 5"]}
-                          />
-                          <Tooltip
-                            contentStyle={{
-                              background: "#020617",
-                              border: "1px solid #334155",
-                              borderRadius: "12px",
-                              color: "#e2e8f0",
-                            }}
-                          />
-                          <Line
-                            type="monotone"
-                            dataKey="weight"
-                            name="重量"
-                            stroke="#38bdf8"
-                            strokeWidth={2}
-                            dot
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-
-                    <div className="rounded-xl border border-slate-700 bg-slate-950 p-4">
-                      <p className="text-sm text-slate-300">
-                        {getTrendComment(chartData)}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+            <p className="mt-1 text-3xl font-bold text-sky-300">
+              {totalVolume.toLocaleString()}kg
+            </p>
           </div>
-        )}
 
+          <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5">
+            <p className="text-sm text-slate-300">
+              直近で一番伸びた種目
+            </p>
+
+            <p className="mt-1 text-2xl font-bold text-emerald-300">
+              {topExercise ? topExercise.label : "-"}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-pink-500/30 bg-pink-500/10 p-5">
+            <p className="text-sm text-slate-300">
+              AIコメント
+            </p>
+
+            <p className="mt-1 text-sm text-pink-200">
+              {insight
+                ? insight
+                : topExercise
+                ? `${topExercise.label}が今回もっとも伸びています。次回もこの流れで狙えます。`
+                : "まずは数回分の記録をためると分析できます。"}
+            </p>
+          </div>
+
+        </CardContent>
+      </Card>
+
+      {/* FILTER */}
+      <div className="flex gap-2 overflow-x-auto pb-2">
+        {bodyParts.map((part) => (
+          <button
+            key={part}
+            onClick={() => setSelectedBodyPart(part)}
+            className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-bold transition ${
+              selectedBodyPart === part
+                ? "bg-sky-400 text-slate-950"
+                : "bg-slate-800 text-slate-300"
+            }`}
+          >
+            {part === "all" ? "全て" : part}
+          </button>
+        ))}
+      </div>
+
+      {/* EMPTY */}
+      {loading ? (
+        <p className="text-slate-400">
+          読み込み中...
+        </p>
+      ) : filteredRecords.length === 0 ? (
         <Card className="border-slate-700 bg-slate-900/80">
-          <CardContent className="space-y-4 p-6">
-            <p className="font-semibold">SNS共有</p>
-            <pre className="whitespace-pre-wrap rounded-xl border border-slate-700 bg-slate-950 p-4 text-sm text-slate-300">
-              {shareText}
-            </pre>
+          <CardContent className="p-6">
+            <p className="text-slate-400">
+              まだ記録がありません。
+            </p>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Button
-                onClick={shareToX}
-                className="bg-blue-400 text-slate-950 hover:bg-blue-400"
-              >
-                Xで共有
-              </Button>
-              <Button
-                onClick={copyText}
-                className="bg-pink-500 text-white hover:bg-pink-400"
-              >
-                インスタ用コピー
-              </Button>
-            </div>
+            <Button
+              className="mt-4"
+              onClick={() => router.push("/training/step1")}
+            >
+              記録を開始する
+            </Button>
           </CardContent>
         </Card>
-      </div>
-    </main>
-  );
+      ) : displayedExercises.length === 0 ? (
+        <Card className="border-slate-700 bg-slate-900/80">
+          <CardContent className="p-6">
+            <p className="text-slate-400">
+              この部位の記録はまだありません。
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4">
+          {displayedExercises.map((exercise) => {
+            const history = getExerciseHistory(
+              filteredRecords,
+              exercise
+            );
+
+            const chartData = history.slice(-5).map((r) => ({
+              date: r.date.slice(5),
+              weight: r.weight,
+            }));
+
+            const { current, prev } = getLatestPair(
+              filteredRecords,
+              exercise
+            );
+
+            if (!current) return null;
+
+            const currentSummary = {
+              weight: current.weight,
+              reps: Math.round(current.reps),
+              sets: current.sets,
+            };
+
+            const prevSummary = prev
+              ? {
+                  weight: prev.weight,
+                  reps: Math.round(prev.reps),
+                  sets: prev.sets,
+                }
+              : null;
+
+            const diff = prevSummary
+              ? {
+                  weight:
+                    currentSummary.weight -
+                    prevSummary.weight,
+                  reps:
+                    currentSummary.reps -
+                    prevSummary.reps,
+                  sets:
+                    currentSummary.sets -
+                    prevSummary.sets,
+                }
+              : null;
+
+            const improved =
+              diff &&
+              (diff.weight > 0 ||
+                diff.reps > 0 ||
+                diff.sets > 0);
+
+            return (
+              <Card
+                key={exercise}
+                className="border-slate-700 bg-slate-900/80"
+              >
+                <CardContent className="space-y-5 p-6">
+
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+
+                      <h2 className="text-xl font-bold">
+                        {getExerciseLabel(exercise)}
+                      </h2>
+
+                      <div>
+                        <p className="text-sm text-slate-400">
+                          今回：
+                          {currentSummary.weight}kg ×{" "}
+                          {currentSummary.reps}rep ×{" "}
+                          {currentSummary.sets}
+                          セット
+                        </p>
+
+                        {diff && (
+                          <div className="mt-2 text-sm">
+
+                            <p>
+                              重量：
+                              {diff.weight >= 0 ? "+" : ""}
+                              {diff.weight}kg
+                            </p>
+
+                            <p>
+                              rep：
+                              {diff.reps >= 0 ? "+" : ""}
+                              {diff.reps}
+                            </p>
+
+                            <p>
+                              セット：
+                              {diff.sets >= 0 ? "+" : ""}
+                              {diff.sets}セット
+                            </p>
+
+                            <p>
+                              {improved
+                                ? "🔥 向上"
+                                : "→ 維持/低下"}
+                            </p>
+
+                          </div>
+                        )}
+                      </div>
+
+                    </div>
+                  </div>
+
+                  <div className="h-56 rounded-xl border border-slate-700 bg-slate-950 p-4">
+
+                    <ResponsiveContainer
+                      width="100%"
+                      height="100%"
+                    >
+                      <LineChart data={chartData}>
+
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          stroke="#1e293b"
+                        />
+
+                        <XAxis
+                          dataKey="date"
+                          stroke="#94a3b8"
+                        />
+
+                        <YAxis
+                          stroke="#94a3b8"
+                          domain={[
+                            "dataMin - 5",
+                            "dataMax + 5",
+                          ]}
+                        />
+
+                        <Tooltip
+                          contentStyle={{
+                            background: "#020617",
+                            border:
+                              "1px solid #334155",
+                            borderRadius: "12px",
+                            color: "#e2e8f0",
+                          }}
+                        />
+
+                        <Line
+                          type="monotone"
+                          dataKey="weight"
+                          name="重量"
+                          stroke="#38bdf8"
+                          strokeWidth={2}
+                          dot
+                        />
+
+                      </LineChart>
+                    </ResponsiveContainer>
+
+                  </div>
+
+                  <div className="rounded-xl border border-slate-700 bg-slate-950 p-4">
+                    <p className="text-sm text-slate-300">
+                      {getTrendComment(chartData)}
+                    </p>
+                  </div>
+
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      {/* SHARE */}
+      <Card className="border-slate-700 bg-slate-900/80">
+        <CardContent className="space-y-4 p-6">
+
+          <p className="font-semibold">
+            SNS共有
+          </p>
+
+          <pre className="whitespace-pre-wrap rounded-xl border border-slate-700 bg-slate-950 p-4 text-sm text-slate-300">
+            {shareText}
+          </pre>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+
+            <Button
+              onClick={shareToX}
+              className="bg-blue-400 text-slate-950 hover:bg-blue-400"
+            >
+              Xで共有
+            </Button>
+
+            <Button
+              onClick={copyText}
+              className="bg-pink-500 text-white hover:bg-pink-400"
+            >
+              インスタ用コピー
+            </Button>
+
+          </div>
+
+        </CardContent>
+      </Card>
+
+    </div>
+  </main>
+);
 }
