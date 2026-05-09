@@ -1,36 +1,31 @@
 // src/app/api/life/feedback/route.ts
-
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-
-import type { AiFeedbackRequest, AiFeedbackResponse } from "@/types/ai";
-import type { LifeSummary } from "@/types/life";
+import { NextRequest, NextResponse } from "next/server";
 import { getLifeFeedback } from "@/lib/server/getLifeFeedback";
+import type { AiFeedbackRequest } from "@/types/ai";
+import type { LifeSummary } from "@/types/life";
+
 
 export async function POST(req: NextRequest) {
   try {
-    const body = (await req.json()) as AiFeedbackRequest<LifeSummary>;
+    const body = await req.json();
 
-    // domain が life 以外ならフォールバック
-    if (body.domain !== "life") {
-      const res: AiFeedbackResponse = {
-        feedback: "不正な domain が指定されています。（life 以外）",
-      };
-      return NextResponse.json(res, { status: 200 });
+    if(!body || body.domain !== "life" || !body.summary) {
+      return NextResponse.json(
+        { feedback: "Life分析に必要なデータが不足しています。" },
+        { status: 400},
+      )
     }
 
     const result = await getLifeFeedback(body);
-    return NextResponse.json(result, { status: 200 });
-  } catch (error) {
-    console.error("life feedback error:", error);
 
-    // フォールバック：AIが落ちていてもアプリは落とさない
-    const fallback: AiFeedbackResponse = {
-      feedback:
-        "今日は生活AIコーチが少し混雑しているようです。\n" +
-        "睡眠時間・疲労・ストレスのバランスを見ながら、無理のないペースで過ごしていきましょう。",
-    };
+    return NextResponse.json(result);
 
-    return NextResponse.json(fallback, { status: 200 });
-  }
+  } catch(error) {
+    console.error("life feedback api error:", error);
+
+    return NextResponse.json(
+      { feedback: "AIによるLife分析の取得に失敗しました。" },
+      { status: 500 }
+  )}
+
 }

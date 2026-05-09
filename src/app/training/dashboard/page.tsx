@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import LoadingLink from "@/components/LoadingLink";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -14,7 +15,6 @@ import {
   CartesianGrid,
 } from "recharts";
 import { getExerciseLabel } from "@/utils/exerciseLabel";
-import LoadingLink from "@/components/LoadingLink";
 
 type TrainingRecord = {
   id: string;
@@ -32,6 +32,36 @@ type TrainingRecord = {
 const bodyParts = ["all", "胸", "背中", "脚", "肩", "腕"] as const;
 
 const exerciseBodyPartMap: Record<string, string> = {
+  bench_press: "胸",
+  incline_bench_press: "胸",
+  dumbbell_press: "胸",
+  dumbbell_fly: "胸",
+  chest_press: "胸",
+
+  lat_pulldown: "背中",
+  seated_row: "背中",
+  deadlift: "背中",
+  pull_up: "背中",
+  barbell_row: "背中",
+
+  squat: "脚",
+  leg_press: "脚",
+  leg_extension: "脚",
+  leg_curl: "脚",
+  romanian_deadlift: "脚",
+
+  shoulder_press: "肩",
+  side_raise: "肩",
+  rear_raise: "肩",
+  front_raise: "肩",
+  shrug: "肩",
+
+  arm_curl: "腕",
+  hammer_curl: "腕",
+  triceps_pushdown: "腕",
+  dips: "腕",
+  skull_crusher: "腕",
+
   ベンチプレス: "胸",
   インクラインベンチプレス: "胸",
   ダンベルプレス: "胸",
@@ -55,12 +85,6 @@ const exerciseBodyPartMap: Record<string, string> = {
   リアレイズ: "肩",
   フロントレイズ: "肩",
   シュラッグ: "肩",
-
-  アームカール: "腕",
-  ハンマーカール: "腕",
-  トライセプスプッシュダウン: "腕",
-  ディップス: "腕",
-  スカルクラッシャー: "腕",
 };
 
 const filterRecords = (records: TrainingRecord[]) => {
@@ -112,7 +136,13 @@ const getExerciseHistory = (records: TrainingRecord[], exercise: string) => {
 };
 
 const getLatestPair = (records: TrainingRecord[], exercise: string) => {
-  const list = [...getExerciseHistory(records, exercise)].reverse();
+  const list = filterRecords(records)
+    .filter((r) => r.exercise === exercise)
+    .sort((a, b) => {
+      const aTime = new Date(a.createdAt ?? a.date).getTime();
+      const bTime = new Date(b.createdAt ?? b.date).getTime();
+      return bTime - aTime;
+    });
 
   return {
     current: list[0],
@@ -135,7 +165,7 @@ const getTrendComment = (chartData: { weight: number }[]) => {
   }
 
   if (a === b && b === c) {
-    return "直近3回は重量維持できています。次回は+2.5kgを狙いたいです。";
+    return "直近3回は重量を維持できています。次回は少しだけ上積みを狙えます。";
   }
 
   if (a > b && b > c) {
@@ -147,6 +177,7 @@ const getTrendComment = (chartData: { weight: number }[]) => {
 
 export default function TrainingPage() {
   const router = useRouter();
+
   const [records, setRecords] = React.useState<TrainingRecord[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [insight, setInsight] = React.useState<string | null>(null);
@@ -155,9 +186,11 @@ export default function TrainingPage() {
   React.useEffect(() => {
     const fetchRecords = async () => {
       try {
-        const res = await fetch("/api/training/records");
-        const data = await res.json();
+        const res = await fetch("/api/training/records", {
+          cache: "no-store",
+        });
 
+        const data = await res.json();
         setRecords(data.records ?? []);
       } catch (error) {
         console.error(error);
@@ -211,7 +244,7 @@ export default function TrainingPage() {
     .filter(Boolean)
     .sort((a, b) => (b?.diff ?? 0) - (a?.diff ?? 0))[0];
 
-  const shareText = `今日のトレーニング完了🔥
+  const shareText = `今日のトレーニング完了
 総ボリューム：${totalVolume.toLocaleString()}kg
 ${topExercise ? `直近で一番伸びた種目：${topExercise.label}` : ""}
 
@@ -229,333 +262,306 @@ ${topExercise ? `直近で一番伸びた種目：${topExercise.label}` : ""}
     alert("コピーしました");
   };
 
-return (
-  <main className="min-h-screen bg-slate-950 px-4 py-8 text-slate-50">
-    <div className="mx-auto max-w-5xl space-y-6">
-
-      {/* HEADER */}
-      <div className="flex items-start justify-between gap-4">
-
-        {/* LEFT */}
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-sky-400">
-            FITRA / TRAINING DASHBOARD
-          </p>
-
-          <h1 className="mt-2 text-3xl font-bold">
-            成長ダッシュボード
-          </h1>
-
-          <p className="mt-2 text-sm text-slate-400">
-            数値だけでなく、直近の伸び方をグラフで確認できます。
-          </p>
-        </div>
-
-        {/* RIGHT */}
+  return (
+    <main className="min-h-screen bg-gradient-to-br from-black via-zinc-950 to-red-950 px-6 py-12 text-white">
+      <div className="mx-auto max-w-6xl space-y-8">
         <div className="flex items-center gap-3">
+          <LoadingLink
+            href="/dashboard"
+            theme="training"
+            className="rounded-full border border-red-500/30 bg-red-500/10 px-4 py-2 text-xs font-semibold text-red-200 transition hover:bg-red-500/20"
+          >
+            Dashboard
+          </LoadingLink>
+
           <LoadingLink
             href="/"
             theme="home"
-            className="rounded-full border border-sky-500/30 bg-sky-500/10 px-4 py-2 text-xs font-semibold text-sky-200 hover:bg-sky-500/20 transition"
+            className="rounded-full border border-zinc-700 bg-zinc-900/60 px-4 py-2 text-xs font-semibold text-zinc-300 transition hover:bg-zinc-800"
           >
-            ← Home
+            Home
           </LoadingLink>
         </div>
 
-      </div>
+        <section>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-red-300">
+              FITRA / TRAINING DASHBOARD
+            </p>
 
-      {/* TOP CARDS */}
-      <Card className="border-slate-700 bg-slate-900/80">
-        <CardContent className="grid gap-4 p-6 sm:grid-cols-3">
+            <h2 className="mt-2 text-2xl font-bold md:text-3xl">
+              成長ダッシュボード
+            </h2>
 
-          <div className="rounded-2xl border border-sky-500/30 bg-sky-500/10 p-5">
-            <p className="text-sm text-slate-300">総ボリューム</p>
-
-            <p className="mt-1 text-3xl font-bold text-sky-300">
-              {totalVolume.toLocaleString()}kg
+            <p className="mt-2 text-sm text-zinc-400">
+              種目ごとの重量推移と直近の伸び方を確認できます。
             </p>
           </div>
+        </section>
 
-          <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5">
-            <p className="text-sm text-slate-300">
-              直近で一番伸びた種目
-            </p>
+        <Card className="border-zinc-800 bg-zinc-900/80">
+          <CardContent className="grid gap-4 p-6 sm:grid-cols-3">
+            <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-5">
+              <p className="text-sm text-zinc-300">総ボリューム</p>
 
-            <p className="mt-1 text-2xl font-bold text-emerald-300">
-              {topExercise ? topExercise.label : "-"}
-            </p>
-          </div>
+              <p className="mt-1 text-3xl font-bold text-red-300">
+                {totalVolume.toLocaleString()}kg
+              </p>
+            </div>
 
-          <div className="rounded-2xl border border-pink-500/30 bg-pink-500/10 p-5">
-            <p className="text-sm text-slate-300">
-              AIコメント
-            </p>
+            <div className="rounded-2xl border border-orange-500/30 bg-orange-500/10 p-5">
+              <p className="text-sm text-zinc-300">直近で一番伸びた種目</p>
 
-            <p className="mt-1 text-sm text-pink-200">
-              {insight
-                ? insight
-                : topExercise
-                ? `${topExercise.label}が今回もっとも伸びています。次回もこの流れで狙えます。`
-                : "まずは数回分の記録をためると分析できます。"}
-            </p>
-          </div>
+              <p className="mt-1 text-2xl font-bold text-orange-300">
+                {topExercise ? topExercise.label : "-"}
+              </p>
+            </div>
 
-        </CardContent>
-      </Card>
+            <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-5">
+              <p className="text-sm text-zinc-300">AIコメント</p>
 
-      {/* FILTER */}
-      <div className="flex gap-2 overflow-x-auto pb-2">
-        {bodyParts.map((part) => (
-          <button
-            key={part}
-            onClick={() => setSelectedBodyPart(part)}
-            className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-bold transition ${
-              selectedBodyPart === part
-                ? "bg-sky-400 text-slate-950"
-                : "bg-slate-800 text-slate-300"
-            }`}
-          >
-            {part === "all" ? "全て" : part}
-          </button>
-        ))}
-      </div>
+              <p className="mt-1 text-sm leading-6 text-rose-200">
+                {insight
+                  ? insight
+                  : topExercise
+                  ? `${topExercise.label}が今回もっとも伸びています。次回もこの流れで狙えます。`
+                  : "まずは数回分の記録をためると分析できます。"}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
 
-      {/* EMPTY */}
-      {loading ? (
-        <p className="text-slate-400">
-          読み込み中...
-        </p>
-      ) : filteredRecords.length === 0 ? (
-        <Card className="border-slate-700 bg-slate-900/80">
-          <CardContent className="p-6">
-            <p className="text-slate-400">
-              まだ記録がありません。
-            </p>
-
-            <Button
-              className="mt-4"
-              onClick={() => router.push("/training/step1")}
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          {bodyParts.map((part) => (
+            <button
+              key={part}
+              onClick={() => setSelectedBodyPart(part)}
+              className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-bold transition ${
+                selectedBodyPart === part
+                  ? "bg-red-400 text-zinc-950"
+                  : "bg-zinc-900 text-zinc-300 hover:bg-zinc-800"
+              }`}
             >
-              記録を開始する
-            </Button>
-          </CardContent>
-        </Card>
-      ) : displayedExercises.length === 0 ? (
-        <Card className="border-slate-700 bg-slate-900/80">
-          <CardContent className="p-6">
-            <p className="text-slate-400">
-              この部位の記録はまだありません。
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4">
-          {displayedExercises.map((exercise) => {
-            const history = getExerciseHistory(
-              filteredRecords,
-              exercise
-            );
+              {part === "all" ? "全て" : part}
+            </button>
+          ))}
+        </div>
 
-            const chartData = history.slice(-5).map((r) => ({
-              date: r.date.slice(5),
-              weight: r.weight,
-            }));
+        {loading ? (
+          <p className="text-zinc-400">読み込み中...</p>
+        ) : filteredRecords.length === 0 ? (
+          <Card className="border-zinc-800 bg-zinc-900/80">
+            <CardContent className="p-6">
+              <p className="text-zinc-400">まだ記録がありません。</p>
 
-            const { current, prev } = getLatestPair(
-              filteredRecords,
-              exercise
-            );
-
-            if (!current) return null;
-
-            const currentSummary = {
-              weight: current.weight,
-              reps: Math.round(current.reps),
-              sets: current.sets,
-            };
-
-            const prevSummary = prev
-              ? {
-                  weight: prev.weight,
-                  reps: Math.round(prev.reps),
-                  sets: prev.sets,
-                }
-              : null;
-
-            const diff = prevSummary
-              ? {
-                  weight:
-                    currentSummary.weight -
-                    prevSummary.weight,
-                  reps:
-                    currentSummary.reps -
-                    prevSummary.reps,
-                  sets:
-                    currentSummary.sets -
-                    prevSummary.sets,
-                }
-              : null;
-
-            const improved =
-              diff &&
-              (diff.weight > 0 ||
-                diff.reps > 0 ||
-                diff.sets > 0);
-
-            return (
-              <Card
-                key={exercise}
-                className="border-slate-700 bg-slate-900/80"
+              <Button
+                className="mt-4 bg-red-400 text-zinc-950 hover:bg-red-300"
+                onClick={() => router.push("/training/live")}
               >
-                <CardContent className="space-y-5 p-6">
+                記録を開始する
+              </Button>
+            </CardContent>
+          </Card>
+        ) : displayedExercises.length === 0 ? (
+          <Card className="border-zinc-800 bg-zinc-900/80">
+            <CardContent className="p-6">
+              <p className="text-zinc-400">この部位の記録はまだありません。</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-4">
+            {displayedExercises.map((exercise) => {
+              const history = getExerciseHistory(filteredRecords, exercise);
 
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
+              const chartData = history.slice(-5).map((r) => ({
+                date: r.date.slice(5),
+                weight: r.weight,
+              }));
 
-                      <h2 className="text-xl font-bold">
-                        {getExerciseLabel(exercise)}
-                      </h2>
+              const { current, prev } = getLatestPair(filteredRecords, exercise);
 
+              if (!current) return null;
+
+              const currentSummary = {
+                weight: current.weight,
+                reps: Math.round(current.reps),
+                sets: current.sets,
+              };
+
+              const prevSummary = prev
+                ? {
+                    weight: prev.weight,
+                    reps: Math.round(prev.reps),
+                    sets: prev.sets,
+                  }
+                : null;
+
+              const diff = prevSummary
+                ? {
+                    weight: currentSummary.weight - prevSummary.weight,
+                    reps: currentSummary.reps - prevSummary.reps,
+                    sets: currentSummary.sets - prevSummary.sets,
+                  }
+                : null;
+
+              const improved =
+                diff && (diff.weight > 0 || diff.reps > 0 || diff.sets > 0);
+
+              return (
+                <Card
+                  key={exercise}
+                  className="border-zinc-800 bg-zinc-900/80"
+                >
+                  <CardContent className="space-y-5 p-6">
+                    <div className="flex items-center justify-between gap-4">
                       <div>
-                        <p className="text-sm text-slate-400">
-                          今回：
-                          {currentSummary.weight}kg ×{" "}
-                          {currentSummary.reps}rep ×{" "}
-                          {currentSummary.sets}
+                        <h2 className="text-xl font-bold">
+                          {getExerciseLabel(exercise)}
+                        </h2>
+
+                        <p className="mt-2 text-sm text-zinc-400">
+                          今回：{currentSummary.weight}kg ×{" "}
+                          {currentSummary.reps}rep × {currentSummary.sets}
                           セット
                         </p>
 
                         {diff && (
-                          <div className="mt-2 text-sm">
-
+                          <div className="mt-3 grid gap-1 text-sm text-zinc-300 sm:grid-cols-4">
                             <p>
                               重量：
-                              {diff.weight >= 0 ? "+" : ""}
-                              {diff.weight}kg
+                              <span
+                                className={
+                                  diff.weight > 0
+                                    ? "text-red-300"
+                                    : "text-zinc-400"
+                                }
+                              >
+                                {diff.weight >= 0 ? "+" : ""}
+                                {diff.weight}kg
+                              </span>
                             </p>
 
                             <p>
                               rep：
-                              {diff.reps >= 0 ? "+" : ""}
-                              {diff.reps}
+                              <span
+                                className={
+                                  diff.reps > 0
+                                    ? "text-red-300"
+                                    : "text-zinc-400"
+                                }
+                              >
+                                {diff.reps >= 0 ? "+" : ""}
+                                {diff.reps}
+                              </span>
                             </p>
 
                             <p>
                               セット：
-                              {diff.sets >= 0 ? "+" : ""}
-                              {diff.sets}セット
+                              <span
+                                className={
+                                  diff.sets > 0
+                                    ? "text-red-300"
+                                    : "text-zinc-400"
+                                }
+                              >
+                                {diff.sets >= 0 ? "+" : ""}
+                                {diff.sets}セット
+                              </span>
                             </p>
 
-                            <p>
-                              {improved
-                                ? "🔥 向上"
-                                : "→ 維持/低下"}
+                            <p className={improved ? "text-red-300" : "text-zinc-400"}>
+                              {improved ? "向上" : "維持または低下"}
                             </p>
-
                           </div>
                         )}
                       </div>
-
                     </div>
-                  </div>
 
-                  <div className="h-56 rounded-xl border border-slate-700 bg-slate-950 p-4">
+                    <div className="h-56 rounded-xl border border-zinc-800 bg-black/50 p-4">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={chartData}>
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            stroke="#27272a"
+                          />
 
-                    <ResponsiveContainer
-                      width="100%"
-                      height="100%"
-                    >
-                      <LineChart data={chartData}>
+                          <XAxis dataKey="date" stroke="#a1a1aa" />
 
-                        <CartesianGrid
-                          strokeDasharray="3 3"
-                          stroke="#1e293b"
-                        />
+                          <YAxis
+                            stroke="#a1a1aa"
+                            domain={["dataMin - 5", "dataMax + 5"]}
+                          />
 
-                        <XAxis
-                          dataKey="date"
-                          stroke="#94a3b8"
-                        />
+                          <Tooltip
+                            contentStyle={{
+                              background: "#09090b",
+                              border: "1px solid #3f3f46",
+                              borderRadius: "12px",
+                              color: "#f4f4f5",
+                            }}
+                          />
 
-                        <YAxis
-                          stroke="#94a3b8"
-                          domain={[
-                            "dataMin - 5",
-                            "dataMax + 5",
-                          ]}
-                        />
+                          <Line
+                            type="monotone"
+                            dataKey="weight"
+                            name="重量"
+                            stroke="#f87171"
+                            strokeWidth={3}
+                            dot={{
+                              r: 4,
+                              fill: "#f87171",
+                              stroke: "#fecaca",
+                              strokeWidth: 1,
+                            }}
+                            activeDot={{
+                              r: 6,
+                              fill: "#fecaca",
+                              stroke: "#f87171",
+                              strokeWidth: 2,
+                            }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
 
-                        <Tooltip
-                          contentStyle={{
-                            background: "#020617",
-                            border:
-                              "1px solid #334155",
-                            borderRadius: "12px",
-                            color: "#e2e8f0",
-                          }}
-                        />
-
-                        <Line
-                          type="monotone"
-                          dataKey="weight"
-                          name="重量"
-                          stroke="#38bdf8"
-                          strokeWidth={2}
-                          dot
-                        />
-
-                      </LineChart>
-                    </ResponsiveContainer>
-
-                  </div>
-
-                  <div className="rounded-xl border border-slate-700 bg-slate-950 p-4">
-                    <p className="text-sm text-slate-300">
-                      {getTrendComment(chartData)}
-                    </p>
-                  </div>
-
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
-
-      {/* SHARE */}
-      <Card className="border-slate-700 bg-slate-900/80">
-        <CardContent className="space-y-4 p-6">
-
-          <p className="font-semibold">
-            SNS共有
-          </p>
-
-          <pre className="whitespace-pre-wrap rounded-xl border border-slate-700 bg-slate-950 p-4 text-sm text-slate-300">
-            {shareText}
-          </pre>
-
-          <div className="grid gap-3 sm:grid-cols-2">
-
-            <Button
-              onClick={shareToX}
-              className="bg-blue-400 text-slate-950 hover:bg-blue-400"
-            >
-              Xで共有
-            </Button>
-
-            <Button
-              onClick={copyText}
-              className="bg-pink-500 text-white hover:bg-pink-400"
-            >
-              インスタ用コピー
-            </Button>
-
+                    <div className="rounded-xl border border-zinc-800 bg-black/40 p-4">
+                      <p className="text-sm text-zinc-300">
+                        {getTrendComment(chartData)}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
+        )}
 
-        </CardContent>
-      </Card>
+        <Card className="border-zinc-800 bg-zinc-900/80">
+          <CardContent className="space-y-4 p-6">
+            <p className="font-semibold">SNS共有</p>
 
-    </div>
-  </main>
-);
+            <pre className="whitespace-pre-wrap rounded-xl border border-zinc-800 bg-black/50 p-4 text-sm text-zinc-300">
+              {shareText}
+            </pre>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Button
+                onClick={shareToX}
+                className="bg-red-400 text-zinc-950 hover:bg-red-300"
+              >
+                Xで共有
+              </Button>
+
+              <Button
+                onClick={copyText}
+                className="bg-zinc-700 text-white hover:bg-zinc-600"
+              >
+                インスタ用コピー
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </main>
+  );
 }
