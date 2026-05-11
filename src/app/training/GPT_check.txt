@@ -1,0 +1,18 @@
+なぜ records POST の中で analyses: { create: ... } を直接書かず、
+rebuildTrainingAnalysis を呼ぶ方針にした？
+
+今回の場合、mode: LIVEの時も全く同じ処理をするので、共通化した。
+
+Q1.
+records POST の主な責務は何？
+
+
+Q2.
+rebuildTrainingAnalysis の主な責務は何？
+
+
+Q3.
+LIVEでもNORMALでも同じAnalysis生成ルールを使いたい場合、
+Analysis生成処理は records にベタ書きするべき？
+それとも共通関数に寄せるべき？
+理由も一言で。

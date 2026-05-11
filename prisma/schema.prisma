@@ -40,12 +40,12 @@ model TrainingRow {
 }
 
 model WorkoutSession {
-  id        Int       @id @default(autoincrement())
-  userId    Int
-  mode      String
-  status    String
-  startedAt DateTime
-  endedAt   DateTime?
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  mode        String
+  status      String
+  startedAt   DateTime
+  endedAt     DateTime?
   totalVolume Int?
 }
 
@@ -62,9 +62,9 @@ model ExerciseLog {
 }
 
 model MealLog {
-  id            String     @id @default(cuid())
+  id            String         @id @default(cuid())
   name          String
-  createdAt     DateTime   @default(now())
+  createdAt     DateTime       @default(now())
   mealType      String
   timestamp     DateTime
   score         Int?
@@ -73,6 +73,7 @@ model MealLog {
   totalCarbs    Float?
   totalProtein  Float?
   items         FoodItem[]
+  dietAnalyses  DietAnalysis[]
 }
 
 model FoodItem {
@@ -85,4 +86,151 @@ model FoodItem {
   fat      Float?
   carbs    Float?
   meal     MealLog @relation(fields: [mealId], references: [id])
+}
+
+model DietAnalysis {
+  id        String   @id @default(cuid())
+  mealLogId String
+  userId    String?
+  date      DateTime
+  score     Int
+  summary   String?
+  feedback  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  mealLog MealLog @relation(fields: [mealLogId], references: [id])
+
+  @@index([date])
+  @@index([mealLogId])
+}
+
+model LifeLog {
+  id           String         @id @default(cuid())
+  userId       String?
+  date         DateTime
+  sleepHours   Float?
+  fatigue      Int?
+  stress       Int?
+  memo         String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  lifeAnalyses LifeAnalysis[]
+
+  @@index([userId])
+  @@index([date])
+}
+
+// 生活ログに対する分析結果を保存するテーブル
+// LifeLog = 睡眠・疲労・ストレスの生データ
+// LifeAnalysis = 生活状態を評価した結果
+model LifeAnalysis {
+  // 分析結果の一意なID
+  id String @id @default(cuid())
+
+  // どのLifeLogを分析した結果なのか
+  lifeLogId String
+
+  // ユーザーID。現状User連携が完全でないので一旦optional
+  userId String?
+
+  // 分析対象日
+  date DateTime
+
+  // 生活スコア。例：72点
+  score Int
+
+  // 判定ラベル。例：「調整しながら進める」
+  label String?
+
+  // 睡眠による加点。例：40点満点中37.1点
+  sleepPoint Float?
+
+  // 疲労による加点。例：30点満点中18点
+  fatiguePoint Float?
+
+  // ストレスによる加点。例：30点満点中12点
+  stressPoint Float?
+
+  // 短い要約。例：「睡眠は良いがストレスがやや高い」
+  summary String?
+
+  // AIまたはロジックによる詳細フィードバック
+  feedback String?
+
+  // 作成日時
+  createdAt DateTime @default(now())
+
+  // 更新日時
+  updatedAt DateTime @updatedAt
+
+  // LifeLogとのリレーション
+  // lifeLogId が LifeLog.id を参照する
+  lifeLog LifeLog @relation(fields: [lifeLogId], references: [id])
+
+  // userId検索を速くする
+  @@index([userId])
+  // date検索を速くする
+  @@index([date])
+  // lifeLogId検索を速くする
+  @@index([lifeLogId])
+}
+
+// トレーニング1回分の親テーブル
+// LIVE入力でもNORMAL入力でも、最終的にはここに集約する
+model TrainingSession {
+  id          String   @id @default(cuid())
+  userId      String?
+  date        DateTime
+  mode        String 
+  totalVolume Float?
+  memo        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  entries  TrainingEntry[]
+  analyses TrainingAnalysis[]
+
+  @@index([userId])
+  @@index([date])
+}
+
+// トレーニング種目ごとの明細テーブル
+// 例：レッグプレス 120kg × 10rep × 3set
+model TrainingEntry {
+  id        String   @id @default(cuid())
+  sessionId String
+  exercise  String
+  weight    Float
+  reps      Int
+  sets      Int
+  volume    Float
+  createdAt DateTime @default(now())
+
+  session TrainingSession @relation(fields: [sessionId], references: [id])
+
+  @@index([sessionId])
+  @@index([exercise])
+}
+
+// トレーニング1回分に対する分析結果
+// 統合ダッシュボードは基本的にこのscoreを見る
+model TrainingAnalysis {
+  id          String   @id @default(cuid())
+  sessionId   String
+  userId      String?
+  date        DateTime
+  score       Int
+  totalVolume Float
+  topExercise String?
+  summary     String?
+  feedback    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  session TrainingSession @relation(fields: [sessionId], references: [id])
+
+  @@index([sessionId])
+  @@index([userId])
+  @@index([date])
 }

@@ -92,6 +92,12 @@ export default function TrainingStep3() {
 
       const data = await res.json();
 
+console.log("TRAINING_SAVE_RESPONSE:", {
+  status: res.status,
+  ok: res.ok,
+  data,
+});
+
       if (!res.ok) {
         throw new Error(data.error ?? "保存に失敗しました");
       }
@@ -108,6 +114,7 @@ export default function TrainingStep3() {
       setIsSaving(false);
     }
   };
+  
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-50">

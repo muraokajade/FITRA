@@ -9,10 +9,34 @@ import type { UserLevel, UserGoal } from "@/types/user";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+/**
+ * ================================
+ * localStorage keys
+ * ================================
+ *
+ * LIFEは現時点ではDB保存しない。
+ * そのため、ベータ版では localStorage を暫定DBとして扱う。
+ *
+ * 役割：
+ * - SLEEP_SCORE_KEY / FATIGUE_SCORE_KEY / STRESS_SCORE_KEY
+ *   → 詳細ページで算出したスコアをLifeトップに反映するための保存先
+ *
+ * - LIFE_SCORE_HISTORY_KEY
+ *   → 生活スコアの履歴グラフ用
+ *
+ * - LIFE_FORM_STATE_KEY
+ *   → Lifeトップの通常入力値をリロード後も復元するための保存先
+ */
 const SLEEP_SCORE_KEY = "fitra_life_sleep_score";
 const FATIGUE_SCORE_KEY = "fitra_life_fatigue_score";
+const STRESS_SCORE_KEY = "fitra_life_stress_score";
 const LIFE_SCORE_HISTORY_KEY = "fitra_life_score_history";
+const LIFE_FORM_STATE_KEY = "fitra_life_form_state";
 
+/**
+ * Sleep詳細ページから戻ってきた評価データ。
+ * scoreがある場合は、通常入力の sleep より優先して生活スコアに反映する。
+ */
 type SleepOverride = {
   score: number;
   sleepHours?: number;
@@ -21,6 +45,10 @@ type SleepOverride = {
   updatedAt?: string;
 };
 
+/**
+ * Fatigue詳細ページから戻ってきた評価データ。
+ * scoreがある場合は、通常入力の fatigue より優先して生活スコアに反映する。
+ */
 type FatigueOverride = {
   score: number;
   fatigueLevel?: number;
@@ -29,15 +57,10 @@ type FatigueOverride = {
   updatedAt?: string;
 };
 
-type LifeScoreHistoryItem = {
-  date: string;
-  score: number;
-  label: string;
-  sleepPoint: number;
-  fatiguePoint: number;
-  stressPoint: number;
-  updatedAt: string;
-};
+/**
+ * Stress詳細ページから戻ってきた評価データ。
+ * scoreがある場合は、通常入力の stress より優先して生活スコアに反映する。
+ */
 type StressOverride = {
   score: number;
   dailyStress?: number;
@@ -47,43 +70,164 @@ type StressOverride = {
   updatedAt?: string;
 };
 
+/**
+ * 生活スコア履歴。
+ * グラフ表示と統合ダッシュボード参照用。
+ */
+type LifeScoreHistoryItem = {
+  date: string;
+  score: number;
+  label: string;
+  sleepPoint: number;
+  fatiguePoint: number;
+  stressPoint: number;
+  updatedAt: string;
+};
+
+/**
+ * Lifeトップ画面の入力状態。
+ *
+ * これがないと、sleep / fatigue / stress を入力しても
+ * リロードした瞬間に全部0へ戻る。
+ *
+ * DB保存がない現段階では、このデータがLIFEの最低限の永続化。
+ */
+type LifeFormState = {
+  sleep: number;
+  fatigue: number;
+  stress: number;
+  sleepTouched: boolean;
+  fatigueTouched: boolean;
+  stressTouched: boolean;
+  updatedAt: string;
+};
+
 export default function LifePage() {
+  /**
+   * ================================
+   * 通常入力値
+   * ================================
+   *
+   * ユーザーがLifeトップで直接入力する値。
+   * - sleep: 睡眠時間
+   * - fatigue: 疲労度 0〜10
+   * - stress: ストレス度 0〜10
+   */
   const [sleep, setSleep] = React.useState<number>(0);
   const [fatigue, setFatigue] = React.useState<number>(0);
   const [stress, setStress] = React.useState<number>(0);
 
+  /**
+   * ================================
+   * touched状態
+   * ================================
+   *
+   * 0という値は「未入力」なのか「0を入力した」のか区別できない。
+   * そのため、各項目が入力済みかどうかを別stateで持つ。
+   */
   const [sleepTouched, setSleepTouched] = React.useState(false);
   const [fatigueTouched, setFatigueTouched] = React.useState(false);
-  const [stressOverride, setStressOverride] =
-  React.useState<StressOverride | null>(null);
-  const STRESS_SCORE_KEY = "fitra_life_stress_score";
-
-
   const [stressTouched, setStressTouched] = React.useState(false);
 
+  /**
+   * ================================
+   * 詳細ページの反映値
+   * ================================
+   *
+   * /life/sleep, /life/fatigue, /life/stress などの詳細ページで
+   * 100点満点のスコアを作った場合、Lifeトップではこちらを優先する。
+   */
   const [sleepOverride, setSleepOverride] =
     React.useState<SleepOverride | null>(null);
   const [fatigueOverride, setFatigueOverride] =
     React.useState<FatigueOverride | null>(null);
+  const [stressOverride, setStressOverride] =
+    React.useState<StressOverride | null>(null);
 
+  /**
+   * 生活スコア履歴。
+   * localStorageから復元し、入力変更時にも自動保存する。
+   */
   const [scoreHistory, setScoreHistory] = React.useState<
     LifeScoreHistoryItem[]
   >([]);
 
+  /**
+   * AI評価まわり。
+   * feedbackはDB保存せず、画面表示だけに使う。
+   */
   const [feedback, setFeedback] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
+  const [isSavingLifeLog, setIsSavingLifeLog] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
+  /**
+   * 現時点では固定。
+   * 後でユーザー設定と接続する余地あり。
+   */
   const userLevel: UserLevel = "beginner";
   const userGoal: UserGoal = "health";
 
+  /**
+   * 今日の日付。
+   * 履歴は「今日のスコアは1件だけ」にしたいので、dateで重複排除する。
+   */
   const today = new Date().toLocaleDateString("ja-JP", {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
   });
 
+  /**
+   * ================================
+   * 初期復元処理
+   * ================================
+   *
+   * ページ初回表示時にlocalStorageから復元する。
+   *
+   * 復元対象：
+   * 1. Lifeトップの通常入力値
+   * 2. Sleep詳細ページの反映スコア
+   * 3. Fatigue詳細ページの反映スコア
+   * 4. Stress詳細ページの反映スコア
+   * 5. 生活スコア履歴
+   */
   React.useEffect(() => {
+    /**
+     * 1. Lifeトップ通常入力の復元
+     *
+     * これが今回の重要修正。
+     * ここがないと、リロード時に sleep/fatigue/stress が全部消える。
+     */
+    const savedFormState = localStorage.getItem(LIFE_FORM_STATE_KEY);
+
+    if (savedFormState) {
+      try {
+        const parsed = JSON.parse(savedFormState) as LifeFormState;
+
+        if (typeof parsed.sleep === "number") {
+          setSleep(parsed.sleep);
+        }
+
+        if (typeof parsed.fatigue === "number") {
+          setFatigue(parsed.fatigue);
+        }
+
+        if (typeof parsed.stress === "number") {
+          setStress(parsed.stress);
+        }
+
+        setSleepTouched(Boolean(parsed.sleepTouched));
+        setFatigueTouched(Boolean(parsed.fatigueTouched));
+        setStressTouched(Boolean(parsed.stressTouched));
+      } catch {
+        localStorage.removeItem(LIFE_FORM_STATE_KEY);
+      }
+    }
+
+    /**
+     * 2. Sleep詳細ページの反映値を復元
+     */
     const savedSleep = localStorage.getItem(SLEEP_SCORE_KEY);
 
     if (savedSleep) {
@@ -103,25 +247,10 @@ export default function LifePage() {
       }
     }
 
+    /**
+     * 3. Fatigue詳細ページの反映値を復元
+     */
     const savedFatigue = localStorage.getItem(FATIGUE_SCORE_KEY);
-    const savedStress = localStorage.getItem(STRESS_SCORE_KEY);
-
-if (savedStress) {
-  try {
-    const parsed = JSON.parse(savedStress) as StressOverride;
-
-    if (typeof parsed.score === "number") {
-      setStressOverride(parsed);
-      setStressTouched(true);
-    }
-
-    if (typeof parsed.dailyStress === "number") {
-      setStress(parsed.dailyStress);
-    }
-  } catch {
-    localStorage.removeItem(STRESS_SCORE_KEY);
-  }
-}
 
     if (savedFatigue) {
       try {
@@ -140,6 +269,31 @@ if (savedStress) {
       }
     }
 
+    /**
+     * 4. Stress詳細ページの反映値を復元
+     */
+    const savedStress = localStorage.getItem(STRESS_SCORE_KEY);
+
+    if (savedStress) {
+      try {
+        const parsed = JSON.parse(savedStress) as StressOverride;
+
+        if (typeof parsed.score === "number") {
+          setStressOverride(parsed);
+          setStressTouched(true);
+        }
+
+        if (typeof parsed.dailyStress === "number") {
+          setStress(parsed.dailyStress);
+        }
+      } catch {
+        localStorage.removeItem(STRESS_SCORE_KEY);
+      }
+    }
+
+    /**
+     * 5. 生活スコア履歴を復元
+     */
     const savedHistory = localStorage.getItem(LIFE_SCORE_HISTORY_KEY);
 
     if (savedHistory) {
@@ -152,8 +306,27 @@ if (savedStress) {
     }
   }, []);
 
+  /**
+   * 何か1つでも入力済みかどうか。
+   * 未入力状態ではスコア0でも「0点」扱いにしない。
+   */
   const hasAnyInput = sleepTouched || fatigueTouched || stressTouched;
 
+  /**
+   * ================================
+   * 生活スコア計算
+   * ================================
+   *
+   * 配点：
+   * - 睡眠 40点
+   * - 疲労 30点
+   * - ストレス 30点
+   *
+   * 合計100点。
+   *
+   * 詳細ページのoverrideがある場合は、
+   * 通常入力より詳細ページのscoreを優先する。
+   */
   const sleepPoint =
     sleepOverride !== null
       ? (sleepOverride.score / 100) * 40
@@ -161,53 +334,77 @@ if (savedStress) {
         ? Math.min(sleep / 7, 1) * 40
         : 0;
 
+  /**
+   * fatigueOverride.score は「良いほど高い点数」。
+   * 通常入力の fatigue は「高いほど疲れている」。
+   *
+   * そのため通常入力では 10 - fatigue で反転する。
+   */
   const fatiguePoint =
     fatigueOverride !== null
-      ? ((100 - fatigueOverride.score) / 100) * 30
+      ? (fatigueOverride.score / 100) * 30
       : fatigueTouched
         ? ((10 - fatigue) / 10) * 30
         : 0;
 
+  /**
+   * stressOverride.score は「良いほど高い点数」。
+   * 通常入力の stress は「高いほどストレスが高い」。
+   *
+   * そのため通常入力では 10 - stress で反転する。
+   */
   const stressPoint =
-  stressOverride !== null
-    ? ((100 - stressOverride.score) / 100) * 30
-    : stressTouched
-      ? ((10 - stress) / 10) * 30
-      : 0;
+    stressOverride !== null
+      ? (stressOverride.score / 100) * 30
+      : stressTouched
+        ? ((10 - stress) / 10) * 30
+        : 0;
 
   const recoveryScore = Math.round(sleepPoint + fatiguePoint + stressPoint);
 
-const recoveryLabel =
-  !hasAnyInput
-    ? "未入力"
-    : recoveryScore >= 70
-      ? "攻めてもよい状態"
-      : recoveryScore >= 50
-        ? "調整しながら進める"
-        : recoveryScore >= 30
-          ? "回復を優先する"
-          : "今日はかなり低調";
+  const recoveryLabel =
+    !hasAnyInput
+      ? "未入力"
+      : recoveryScore >= 70
+        ? "攻めてもよい状態"
+        : recoveryScore >= 50
+          ? "調整しながら進める"
+          : recoveryScore >= 30
+            ? "回復を優先する"
+            : "今日はかなり低調";
 
-const recoveryMessage =
-  !hasAnyInput
-    ? "睡眠・疲労・ストレスを入力すると、今日の生活スコアを判定します。"
-    : recoveryScore >= 70
-      ? "今日の回復状態は十分です。通常メニューから入って、調子が良ければ強度を上げられます。"
-      : recoveryScore >= 50
-        ? "大きく崩れてはいません。攻め切るより、整えながら進める状態です。"
-        : recoveryScore >= 30
-          ? "回復が弱めです。今日は負荷を上げすぎず、整える判断が合いそうです。"
-          : "回復状態がかなり低めです。今日は高負荷より、休養と最低限の活動を優先する状態です。";
+  const recoveryMessage =
+    !hasAnyInput
+      ? "睡眠・疲労・ストレスを入力すると、今日の生活スコアを判定します。"
+      : recoveryScore >= 70
+        ? "今日の回復状態は十分です。通常メニューから入って、調子が良ければ強度を上げられます。"
+        : recoveryScore >= 50
+          ? "大きく崩れてはいません。攻め切るより、整えながら進める状態です。"
+          : recoveryScore >= 30
+            ? "回復が弱めです。今日は負荷を上げすぎず、整える判断が合いそうです。"
+            : "回復状態がかなり低めです。今日は高負荷より、休養と最低限の活動を優先する状態です。";
 
-const nextGuide =
-  sleepOverride === null
-    ? "sleep"
-    : fatigueOverride === null
-      ? "fatigue"
-      : stressOverride === null
-        ? "stress"
-        : "";
+  /**
+   * 次に確認すべき詳細ページ。
+   * 未反映の項目を上から順に案内する。
+   */
+  const nextGuide =
+    sleepOverride === null
+      ? "sleep"
+      : fatigueOverride === null
+        ? "fatigue"
+        : stressOverride === null
+          ? "stress"
+          : "";
 
+  /**
+   * グラフ表示用データ。
+   *
+   * scoreHistoryは新しい順で保存している。
+   * グラフは古い→新しい順にしたいので reverse する。
+   *
+   * 今日の入力中スコアもグラフに出す。
+   */
   const graphItems = [
     ...scoreHistory
       .filter((item) => item.date !== today)
@@ -224,7 +421,16 @@ const nextGuide =
     },
   ];
 
-  const saveTodayScore = () => {
+  /**
+   * 今日の生活スコアを履歴に保存する共通関数。
+   *
+   * 注意：
+   * - 同じ日付の履歴は1件にまとめる
+   * - 最大7件だけ保持する
+   */
+  const saveTodayScore = React.useCallback(() => {
+    if (!hasAnyInput) return;
+
     const item: LifeScoreHistoryItem = {
       date: today,
       score: recoveryScore,
@@ -235,15 +441,77 @@ const nextGuide =
       updatedAt: new Date().toISOString(),
     };
 
-    const nextHistory = [
-      item,
-      ...scoreHistory.filter((history) => history.date !== today),
-    ].slice(0, 7);
+    setScoreHistory((prev) => {
+      const nextHistory = [
+        item,
+        ...prev.filter((history) => history.date !== today),
+      ].slice(0, 7);
 
-    setScoreHistory(nextHistory);
-    localStorage.setItem(LIFE_SCORE_HISTORY_KEY, JSON.stringify(nextHistory));
-  };
+      localStorage.setItem(
+        LIFE_SCORE_HISTORY_KEY,
+        JSON.stringify(nextHistory)
+      );
 
+      return nextHistory;
+    });
+  }, [
+    hasAnyInput,
+    today,
+    recoveryScore,
+    recoveryLabel,
+    sleepPoint,
+    fatiguePoint,
+    stressPoint,
+  ]);
+
+  /**
+   * ================================
+   * 通常入力値の自動保存
+   * ================================
+   *
+   * これがないと、リロードで入力値が消える。
+   *
+   * 保存対象：
+   * - sleep
+   * - fatigue
+   * - stress
+   * - touched状態
+   */
+  React.useEffect(() => {
+    const formState: LifeFormState = {
+      sleep,
+      fatigue,
+      stress,
+      sleepTouched,
+      fatigueTouched,
+      stressTouched,
+      updatedAt: new Date().toISOString(),
+    };
+
+    localStorage.setItem(LIFE_FORM_STATE_KEY, JSON.stringify(formState));
+  }, [sleep, fatigue, stress, sleepTouched, fatigueTouched, stressTouched]);
+
+  /**
+   * ================================
+   * 生活スコア履歴の自動保存
+   * ================================
+   *
+   * ベータ版ではDBがないため、
+   * 入力しただけでも統合ダッシュボードへ反映できるようにする。
+   *
+   * これにより、AI評価ボタンを押さなくても
+   * localStorageに今日のLifeスコアが保存される。
+   */
+  React.useEffect(() => {
+    saveTodayScore();
+  }, [saveTodayScore]);
+
+  /**
+   * AI総合評価。
+   *
+   * AI評価に成功した場合も、念のため今日のスコアを保存する。
+   * ただし、すでに自動保存があるため、主目的はfeedback表示。
+   */
   const handleAnalyze = async () => {
     setError(null);
     setFeedback("");
@@ -304,21 +572,98 @@ const nextGuide =
       setIsLoading(false);
     }
   };
+  const handleSaveLifeLog = async () => {
+  setError(null);
 
+  if (
+    sleep < 0 ||
+    sleep > 24 ||
+    fatigue < 0 ||
+    fatigue > 10 ||
+    stress < 0 ||
+    stress > 10
+  ) {
+    setError(
+      "睡眠は0〜24時間、疲労度・ストレスは0〜10の範囲で入力してください。"
+    );
+    return;
+  }
+
+  try {
+    setIsSavingLifeLog(true);
+
+    const res = await fetch("/api/life/logs", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userId: "demo",
+        date: new Date().toISOString(),
+        sleepHours: sleep,
+        fatigue,
+        stress,
+        memo: null,
+      }),
+    });
+
+    const data = await res.json();
+    console.log("LIFE_SAVE_RESPONSE:", data);
+
+    if (!res.ok) {
+      setError(data.error ?? "Lifeログの保存に失敗しました。");
+      return;
+    }
+
+    alert("LifeログをDBに保存しました。");
+  } catch (e) {
+    console.error(e);
+    setError("Lifeログの保存に失敗しました。");
+  } finally {
+    setIsSavingLifeLog(false);
+  }
+};
+
+
+
+  /**
+   * input[type=number] の値をnumberへ変換する。
+   * 空文字などでNaNになった場合はfallbackを返す。
+   */
   const parseNumber = (value: string, fallback: number): number => {
     const n = Number(value);
     return Number.isNaN(n) ? fallback : n;
   };
 
-const clearOverrides = () => {
-  localStorage.removeItem(SLEEP_SCORE_KEY);
-  localStorage.removeItem(FATIGUE_SCORE_KEY);
-  localStorage.removeItem(STRESS_SCORE_KEY);
-  setSleepOverride(null);
-  setFatigueOverride(null);
-  setStressOverride(null);
-  setFeedback("");
-};
+  /**
+   * 詳細ページの反映をリセット。
+   *
+   * 今回は「詳細反映リセット」ボタンなので、
+   * 通常入力値も含めて完全初期化する。
+   *
+   * これにより、リセット後の挙動が分かりやすくなる。
+   */
+  const clearOverrides = () => {
+    localStorage.removeItem(SLEEP_SCORE_KEY);
+    localStorage.removeItem(FATIGUE_SCORE_KEY);
+    localStorage.removeItem(STRESS_SCORE_KEY);
+    localStorage.removeItem(LIFE_FORM_STATE_KEY);
+
+    setSleepOverride(null);
+    setFatigueOverride(null);
+    setStressOverride(null);
+
+    setSleep(0);
+    setFatigue(0);
+    setStress(0);
+
+    setSleepTouched(false);
+    setFatigueTouched(false);
+    setStressTouched(false);
+
+    setFeedback("");
+    setError(null);
+  };
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-slate-950 via-slate-900 to-emerald-950 px-4 py-8 text-white">
@@ -348,7 +693,7 @@ const clearOverrides = () => {
               theme="life"
               className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-200 transition hover:bg-emerald-500/20"
             >
-              ← Dashboard
+              Dashboard
             </LoadingLink>
 
             <LoadingLink
@@ -356,7 +701,7 @@ const clearOverrides = () => {
               theme="home"
               className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900/80 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:border-emerald-400 hover:text-emerald-200"
             >
-              ← Home
+              Home
             </LoadingLink>
           </div>
         </header>
@@ -392,7 +737,7 @@ const clearOverrides = () => {
                     生活スコア履歴
                   </p>
                   <p className="mt-2 text-xs leading-5 text-slate-500">
-                    AI評価時に今日のスコアを保存します。
+                    入力内容から今日の生活スコアを保存します。
                   </p>
                 </div>
 
@@ -402,8 +747,7 @@ const clearOverrides = () => {
               <MiniLifeScoreGraph items={graphItems} />
 
               <p className="mt-4 text-xs leading-6 text-slate-500">
-                詳細ページで深掘りしたスコアを反映すると、
-                今日の生活スコアと内訳が更新されます。
+                現時点ではDB保存せず、localStorageに暫定保存しています。
               </p>
             </div>
           </div>
@@ -430,6 +774,12 @@ const clearOverrides = () => {
               onChange={(value) => {
                 setSleep(parseNumber(value, sleep));
                 setSleepTouched(true);
+
+                /**
+                 * 通常入力を変更した場合、詳細ページの反映値は解除する。
+                 * 理由：
+                 * - 詳細評価と通常入力が混在すると、ユーザーが混乱するため
+                 */
                 setSleepOverride(null);
                 localStorage.removeItem(SLEEP_SCORE_KEY);
               }}
@@ -445,6 +795,10 @@ const clearOverrides = () => {
               onChange={(value) => {
                 setFatigue(parseNumber(value, fatigue));
                 setFatigueTouched(true);
+
+                /**
+                 * 通常入力を変更した場合、詳細ページの反映値は解除する。
+                 */
                 setFatigueOverride(null);
                 localStorage.removeItem(FATIGUE_SCORE_KEY);
               }}
@@ -460,6 +814,12 @@ const clearOverrides = () => {
               onChange={(value) => {
                 setStress(parseNumber(value, stress));
                 setStressTouched(true);
+
+                /**
+                 * 通常入力を変更した場合、詳細ページの反映値は解除する。
+                 */
+                setStressOverride(null);
+                localStorage.removeItem(STRESS_SCORE_KEY);
               }}
             />
           </div>
@@ -588,9 +948,7 @@ const clearOverrides = () => {
             <p className="text-xs tracking-[0.2em] text-emerald-300">
               STEP 3
             </p>
-            <h2 className="mt-2 text-lg font-semibold">
-              AIで総合生活評価
-            </h2>
+            <h2 className="mt-2 text-lg font-semibold">AIで総合生活評価</h2>
           </div>
 
           <div className="flex flex-wrap justify-end gap-3">
@@ -599,8 +957,17 @@ const clearOverrides = () => {
               onClick={clearOverrides}
               className="rounded-xl border border-slate-700 bg-slate-900/80 px-4 py-2 text-xs text-slate-300 transition hover:border-emerald-400"
             >
-              詳細反映をリセット
+              入力と詳細反映をリセット
             </button>
+
+            <Button
+              type="button"
+              onClick={handleSaveLifeLog}
+              disabled={isSavingLifeLog}
+              className="inline-flex items-center gap-2 bg-slate-700 hover:bg-slate-600"
+            >
+              {isSavingLifeLog ? "DB保存中..." : "生活ログをDBに保存する"}
+            </Button>
 
             <Button
               type="button"
@@ -637,6 +1004,12 @@ const clearOverrides = () => {
   );
 }
 
+/**
+ * 円形スコア表示。
+ *
+ * SVGの円をstrokeDashoffsetで制御している。
+ * hasInput=false のときは未入力扱いにして、スコア0でも悪い状態に見せない。
+ */
 function ScoreCircle({
   score,
   hasInput,
@@ -650,27 +1023,27 @@ function ScoreCircle({
   const progress = hasInput ? (safeScore / 100) * circumference : 0;
   const dashOffset = circumference - progress;
 
-const color =
-  !hasInput
-    ? "rgb(148,163,184)"
-    : safeScore >= 70
-      ? "rgb(52,211,153)"
-      : safeScore >= 50
-        ? "rgb(96,165,250)"
-        : safeScore >= 30
-          ? "rgb(251,191,36)"
-          : "rgb(248,113,113)";
+  const color =
+    !hasInput
+      ? "rgb(148,163,184)"
+      : safeScore >= 70
+        ? "rgb(52,211,153)"
+        : safeScore >= 50
+          ? "rgb(96,165,250)"
+          : safeScore >= 30
+            ? "rgb(251,191,36)"
+            : "rgb(248,113,113)";
 
-const label =
-  !hasInput
-    ? "未入力"
-    : safeScore >= 70
-      ? "攻める"
-      : safeScore >= 50
-        ? "調整"
-        : safeScore >= 30
-          ? "回復"
-          : "低調";
+  const label =
+    !hasInput
+      ? "未入力"
+      : safeScore >= 70
+        ? "攻める"
+        : safeScore >= 50
+          ? "調整"
+          : safeScore >= 30
+            ? "回復"
+            : "低調";
 
   return (
     <div className="relative h-[180px] w-[180px]">
@@ -708,6 +1081,9 @@ const label =
   );
 }
 
+/**
+ * Lifeトップの数値入力コンポーネント。
+ */
 function LifeInput({
   label,
   value,
@@ -746,6 +1122,9 @@ function LifeInput({
   );
 }
 
+/**
+ * Sleep / Fatigue / Stress 詳細ページへの導線カード。
+ */
 function LifeDetailCard({
   href,
   title,
@@ -789,11 +1168,14 @@ function LifeDetailCard({
 
       <p className="mt-2 text-2xl font-bold text-white">{value}</p>
       <p className="mt-2 text-[11px] leading-5 text-slate-500">{desc}</p>
-      <p className="mt-3 text-xs text-emerald-300">原因を確認する →</p>
+      <p className="mt-3 text-xs text-emerald-300">原因を確認する</p>
     </LoadingLink>
   );
 }
 
+/**
+ * スコア内訳表示。
+ */
 function BreakdownItem({
   label,
   value,
@@ -812,6 +1194,12 @@ function BreakdownItem({
   );
 }
 
+/**
+ * localStorageに保存した生活スコア履歴を表示する簡易線グラフ。
+ *
+ * rechartsを使わずSVGで描画している。
+ * 依存が少なく、止血対応として壊れにくい。
+ */
 function MiniLifeScoreGraph({
   items,
 }: {

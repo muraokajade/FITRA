@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-type MealPayload = {
+type TempMealPayload = {
   foodItems: string[];
   text?: string;
   feedback?: string;
@@ -27,9 +27,9 @@ export async function POST(req: NextRequest) {
     const { userId, date, meals, dailyFeedback } = body as {
       userId?: string;
       date?: string;
-      meals?: MealPayload[];
+      meals?: TempMealPayload[];
       dailyFeedback?: string;
-    } 
+    };
 
     if(!userId || !date || !Array.isArray(meals) || meals.length === 0) {
       return NextResponse.json(
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
         timestamp: new Date(date),
         score,
         
-
+        //このmapの理解ができてない
         items: {
           create: foodNames.map((name) => ({
             name,
@@ -67,9 +67,20 @@ export async function POST(req: NextRequest) {
             carbs: 0,
           })),
         },
+        dietAnalyses: {
+          create: {
+            userId: userId ?? "demo",
+            date: new Date(date),
+            score: score ?? 0,
+            summary: "今日の食事ログのAI評価",
+            feedback: dailyFeedback ?? "",
+
+          }
+        }
       },
       include: {
         items: true,
+        dietAnalyses: true
       },
     });
     return NextResponse.json(saved, { status: 201});
@@ -86,7 +97,7 @@ export async function POST(req: NextRequest) {
 export async function GET() {
   const logs = await prisma.mealLog.findMany({
     orderBy: { createdAt: "desc" },
-    include: { items: true },
+    include: { items: true, dietAnalyses: true },
   });
 
   return NextResponse.json(logs);
