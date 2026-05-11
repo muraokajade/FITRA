@@ -2,6 +2,15 @@
 
 import LoadingLink from "@/components/LoadingLink";
 import { useEffect, useState } from "react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+
 
 type TodaySummary = {
   overallScore: number | null;
@@ -23,6 +32,7 @@ type HistoryItem = {
 type DashboardResponse = {
   todaySummary: TodaySummary;
   historyItems: HistoryItem[];
+  scoreTrend: ScoreTrendItem[];
 }
 
 const emptyTodaySummary: TodaySummary = {
@@ -32,10 +42,101 @@ const emptyTodaySummary: TodaySummary = {
   lifeScore: null,
 }
 
+type ScoreTrendItem = {
+  date: string;
+  overallScore: number | null;
+  dietScore: number | null;
+  trainingScore: number | null;
+  lifeScore: number | null;
+};
+
+type InsightArea = "diet" | "training" | "life";
+
+type DashboardInsightArea = {
+  area: InsightArea;
+  label: string;
+  score: number;
+}
+
+type DashboardInsight = {
+  lowest: DashboardInsightArea;
+  highest: DashboardInsightArea;
+  actionTitle: string;
+  actionDetail: string;
+}
+
+function createDashboardInsight(today: TodaySummary): DashboardInsight | null {
+  const areas = [
+    {
+      area: "diet" as const,
+      label: "Diet",
+      score: today.dietScore,
+    },
+    {
+      area: "training" as const,
+      label: "Training",
+      score: today.trainingScore,
+    },
+    {
+      area: "life" as const,
+      label: "Life",
+      score: today.lifeScore,
+    },
+  ].filter((item): item is DashboardInsightArea => typeof item.score === "number");
+
+  if(areas.length === 0) {
+    return null;
+  }
+  /**
+   * スコアが低い順に並べる。
+   *
+   * 先頭 = 改善優先エリア
+   * 末尾 = 強みエリア
+   */
+  const sortedAreas = [...areas,].sort((a , b ) => a.score - b.score);
+
+  const lowest = sortedAreas[0];
+  const highest = sortedAreas[sortedAreas.length - 1];
+
+   /**
+   * 最も低い領域に応じて、今日の一手を決める。
+   *
+   * ここはAI生成ではなく、まずは固定ロジックで十分。
+   */
+  const action =
+    lowest.area === "diet"
+      ? {
+          actionTitle: "食事バランスを優先",
+          actionDetail:
+            "高タンパク・低脂質の食事を1回入れて、Dietスコアの底上げを狙いましょう。",
+        }
+      : lowest.area === "training"
+      ? {
+          actionTitle: "トレーニング入力を優先",
+          actionDetail:
+            "メイン種目を1つ記録し、負荷・回数・セット数から成長状態を確認しましょう。",
+        }
+      : {
+          actionTitle: "回復を優先",
+          actionDetail:
+            "睡眠・疲労・ストレスを入力し、今日は回復状態を整えることを優先しましょう。",
+        };
+
+      return {
+        lowest,
+        highest,
+        actionTitle: action.actionTitle,
+        actionDetail: action.actionDetail,
+      };
+
+
+}
+
 
 export default function DashboardPage() {
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const scoreTrend = dashboard?.scoreTrend ?? []; // dashboardという変数のデータ構造に違和感あり
 
   // /api/dashboard から統合スコアと履歴を取得する
   useEffect(() => {
@@ -66,6 +167,7 @@ export default function DashboardPage() {
     // API取得前でも画面が落ちないように空データを使う？？？？？？？
     const today = dashboard?.todaySummary ?? emptyTodaySummary;
     const historyItems = dashboard?.historyItems ?? [];
+    const dashboardInsight = createDashboardInsight(today);
 
     const displayOverallScore = today.overallScore ?? 0;
     const overallBarWidth = Math.min(Math.max(displayOverallScore, 0), 100);
@@ -141,6 +243,9 @@ export default function DashboardPage() {
             <QuickNavCard label="Life AI" href="/life" theme="life" />
           </div>
         </section>
+
+        <ScoreTrendChart data={scoreTrend}/>
+        <DashboardInsightCards insight={dashboardInsight} />
 
         <section className="rounded-2xl border border-slate-800 bg-[#0b0f16] p-5 shadow-lg shadow-black/40">
           <h2 className="text-sm font-semibold text-slate-100">
@@ -230,4 +335,146 @@ function HistoryRow({ item }: { item: HistoryItem }) {
     </LoadingLink>
   );
   
+}
+
+function ScoreTrendChart({ data }: { data: ScoreTrendItem[] }) {
+  return (
+    <section className="rounded-2xl border border-blue-500/20 bg-[#0b0f16] p-5 shadow-lg shadow-black/40">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="text-xs tracking-[0.2em] text-blue-200">
+            SCORE TREND
+          </p>
+          <h2 className="mt-2 text-sm font-semibold text-slate-100">
+            統合スコア推移
+          </h2>
+        </div>
+
+        <p className="text-[11px] text-slate-500">直近7件</p>
+      </div>
+
+      <div className="mt-5 h-56 w-full">
+        {data.length > 0 ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={data}>
+              <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="#64748b" />
+              <YAxis
+                domain={[0, 100]}
+                tick={{ fontSize: 11 }}
+                stroke="#64748b"
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "#020617",
+                  border: "1px solid #1e293b",
+                  borderRadius: "12px",
+                  color: "#e2e8f0",
+                }}
+              />
+              <Line
+                type="monotone"
+                dataKey="overallScore"
+                stroke="#38bdf8"
+                strokeWidth={3}
+                dot={{ r: 4 }}
+                activeDot={{ r: 6 }}
+                connectNulls
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="flex h-full items-center justify-center rounded-xl border border-slate-800 bg-slate-900/40 text-xs text-slate-500">
+            まだスコア推移データがありません。
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function DashboardInsightCards({
+  insight,
+}: {
+  insight: DashboardInsight | null;
+}) {
+  if (!insight) {
+    return (
+      <section className="rounded-2xl border border-slate-800 bg-[#0b0f16] p-5 shadow-lg shadow-black/40">
+        <p className="text-xs tracking-[0.2em] text-blue-200">
+          DASHBOARD INSIGHT
+        </p>
+
+        <p className="mt-3 text-sm text-slate-400">
+          まだInsightを表示できる分析データがありません。
+        </p>
+      </section>
+    );
+  }
+
+  return (
+    <section className="grid gap-4 md:grid-cols-3">
+      <InsightCard
+        title="改善優先"
+        label={insight.lowest.label}
+        score={insight.lowest.score}
+        description={`${insight.lowest.label} が現在もっとも低いスコアです。ここを改善すると、統合スコアの底上げにつながります。`}
+      />
+
+      <InsightCard
+        title="強み"
+        label={insight.highest.label}
+        score={insight.highest.score}
+        description={`${insight.highest.label} は現在もっとも高いスコアです。良い状態を維持できています。`}
+        highlight
+      />
+
+      <div className="rounded-2xl border border-blue-500/40 bg-[#0b0f16] p-5 shadow-lg shadow-black/40">
+        <p className="text-xs tracking-[0.2em] text-blue-200">
+          TODAY ACTION
+        </p>
+
+        <h2 className="mt-3 text-sm font-semibold text-slate-100">
+          {insight.actionTitle}
+        </h2>
+
+        <p className="mt-3 text-xs leading-relaxed text-slate-300">
+          {insight.actionDetail}
+        </p>
+      </div>
+    </section>
+  );
+}
+
+function InsightCard({
+  title,
+  label,
+  score,
+  description,
+  highlight,
+}: {
+  title: string;
+  label: string;
+  score: number;
+  description: string;
+  highlight?: boolean;
+}) {
+  return (
+    <div
+      className={`rounded-2xl border bg-[#0b0f16] p-5 shadow-lg shadow-black/40 ${
+        highlight ? "border-blue-500/50" : "border-slate-800"
+      }`}
+    >
+      <p className="text-xs tracking-[0.2em] text-blue-200">{title}</p>
+
+      <div className="mt-3 flex items-end justify-between gap-3">
+        <h2 className="text-lg font-bold text-slate-100">{label}</h2>
+
+        <p className="text-3xl font-black text-blue-300">{score}</p>
+      </div>
+
+      <p className="mt-3 text-xs leading-relaxed text-slate-400">
+        {description}
+      </p>
+    </div>
+  );
 }

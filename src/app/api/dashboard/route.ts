@@ -40,6 +40,14 @@ type DashboardHistoryItem = {
    score: number | null;
 }
 
+type ScoreTrendItem = {
+    date: string;
+    overallScore: number | null;
+    dietScore: number | null;
+    trainingScore: number | null;
+    lifeScore: number | null;
+}
+
 function formatDate(date: Date) {
     return date.toISOString().slice(0, 10);
 }
@@ -71,22 +79,30 @@ export async function GET() {
      * Diet → Training → Life の順番で待つ必要がないため。
      * 3つ同時にDBへ問い合わせて、全部終わったら次へ進む。
      */
-     const [dietAnalysis, trainingAnalysis, lifeAnalysis] = await Promise.all([
-        prisma.dietAnalysis.findFirst({
-            where: { userId },
-            orderBy: { date: "desc" }
-        }),
-        prisma.trainingAnalysis.findFirst({
-            where: { userId },
-            orderBy: { date: "desc" }
-
-        }),
-        prisma.lifeAnalysis.findFirst({
+    const [dietAnalyses, trainingAnalyses, lifeAnalyses] = await Promise.all([
+        prisma.dietAnalysis.findMany({
         where: { userId },
-        orderBy: { date: "desc" },
-      }),
+        orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+        take: 7,
+    }),
 
-     ]);
+    prisma.trainingAnalysis.findMany({
+        where: { userId },
+        orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+        take: 7,
+    }),
+
+    prisma.lifeAnalysis.findMany({
+        where: { userId },
+        orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+        take: 7,
+        }),
+    ]);
+
+    const dietAnalysis = dietAnalyses[0] ?? null;
+    const trainingAnalysis = trainingAnalyses[0] ?? null;
+    const lifeAnalysis = lifeAnalyses[0] ?? null;
+
 
     const dietScore = dietAnalysis?.score ?? null;
     const trainingScore = trainingAnalysis?.score ?? null;
@@ -139,6 +155,70 @@ export async function GET() {
     //TODO このメソッド知らん
     historyItems.sort((a, b) => b.date.localeCompare(a.date));
 
+    /**
+     * 直近Analysisを日付ごとにまとめて、グラフ用のスコア推移を作る。
+     * diet/training/life は別テーブルなので、date をキーにして1日分へ統合する。
+     */
+
+    const trendMap = new Map<string, ScoreTrendItem>();
+
+    for (const analysis of dietAnalyses) {
+        const date = formatDate(analysis.date);
+
+        ///すでに同じ日付の箱があれば使う。なければ新しく作る。
+        const current = trendMap.get(date) ?? {
+            date,
+            overallScore: null,
+            dietScore: null,
+            trainingScore: null,
+            lifeScore: null,
+        }
+        current.dietScore = analysis.score;
+        trendMap.set(date, current);
+    }
+    for (const analysis of trainingAnalyses) {
+    const date = formatDate(analysis.date);
+
+    const current = trendMap.get(date) ?? {
+        date,
+        overallScore: null,
+        dietScore: null,
+        trainingScore: null,
+        lifeScore: null,
+        };
+
+        current.trainingScore = analysis.score;
+        trendMap.set(date, current);
+    }
+
+// LifeAnalysis の直近データを日付ごとの箱に入れる
+    for (const analysis of lifeAnalyses) {
+        const date = formatDate(analysis.date);
+
+        const current = trendMap.get(date) ?? {
+            date,
+            overallScore: null,
+            dietScore: null,
+            trainingScore: null,
+            lifeScore: null,
+        };
+
+        current.lifeScore = analysis.score;
+        trendMap.set(date, current);
+    }
+
+    const scoreTrend = Array.from(trendMap.values())
+        .map((item) => ({
+            ...item,
+            overallScore: calculateOverallScore([
+                item.dietScore,
+                item.trainingScore,
+                item.lifeScore
+            ]),
+        }))
+        .sort((a, b) => a.date.localeCompare(b.date));
+
+
     return NextResponse.json({
       todaySummary: {
         overallScore,
@@ -152,8 +232,8 @@ export async function GET() {
         training: trainingAnalysis,
         life: lifeAnalysis,
       },
-
-      historyItems,
+        historyItems,
+        scoreTrend
     });
 
 
