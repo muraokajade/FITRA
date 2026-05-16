@@ -1,230 +1,251 @@
-# DevNav — React × Spring Boot 統合教材
+# FITRA — AI Fitness Management App
 
-[![Deploy Frontend (Vercel)](https://img.shields.io/badge/Vercel-Frontend-black)](#)
-[![Backend (Koyeb)](https://img.shields.io/badge/Koyeb-Backend-blue)](#)
-[![DB (Neon)](https://img.shields.io/badge/Neon-Postgres-green)](#)
-[![Cloudflare DNS](https://img.shields.io/badge/Cloudflare-DNS%2FSSL-orange)](#)
+[![Frontend](https://img.shields.io/badge/Frontend-Next.js-black)](#)
+[![Auth](https://img.shields.io/badge/Auth-Firebase-orange)](#)
+[![DB](https://img.shields.io/badge/DB-Prisma%20%2F%20Database-blue)](#)
+[![Deploy](https://img.shields.io/badge/Deploy-Vercel-black)](#)
 
-## React × Spring Boot 実務再現教材 — 記事100本の開発手順ページで、本番構成を再現しポートフォリオに直結。
+## AIで、食事・運動・生活を統合管理するフィットネス記録アプリ
 
-## 目次
-- [概要](#概要)
-- [成果](#成果)
-- [デモ / スクリーンショット](#デモ--スクリーンショット)
-- [Insomnia/Postman テスト](#insomniapostman-テスト管理者ファースト--ローカル)
-- [システム構成](#システム構成)
-- [主要機能](#主要機能)
-- [セットアップ（最短ルート）](#セットアップ最短ルート)
-- [デプロイ](#デプロイ)
-- [API 一覧（抜粋）](#api-一覧抜粋)
-- [開発ロードマップ](#開発ロードマップ)
-- [このプロジェクトが解決する課題](#このプロジェクトが解決する課題)
-- [実績・数値](#実績数値)
-
-## 概要
-- React（TS）× Spring Boot（JPA） を接続し、本番構成をそのまま再現できる実務教材。
-- **記事100本**の開発手順ページで、環境構築〜デプロイを一気通貫で体験。
-- Vercel × Koyeb × Neon × Cloudflare による本番同等のクラウド構成を提供。
-
-## 成果
-- 読者の成果：本番同等の構成を再現し、クラウド環境へデプロイ可能。
-- 制作者の成果：React × Spring Boot 両面で即戦力を証明し案件獲得へ直結。さらに、**Q&A機能によるフィードバックで教材を継続的に洗練**。
-
-
-## デモ / スクリーンショット
-- **本番URL**：https://devnav.tech （検証後に記載）
-
-### マイページの主な機能
-- プロフィールカード（表示名/メール、Lv/XP%バー）
-- 学習カレンダー（月表示・日別アクティビティ）
-- 統計カード：記録記事数 / レビュー数 / いいね数 / コメント数
-- いいねした記事（最新リストへのリンク）
-- 直近のアクション履歴（読了・コメント・いいねのタイムライン）
-![マイページ](https://github.com/user-attachments/assets/87aaa417-c130-4bc4-bb41-cea18173cb1e)
-
-### Q&A（学習者）
-- 質問投稿（タイトル/本文、ログイン必須）
-- ステータス表示（受付中・解決）
-- 自分の質問一覧／詳細（コメント履歴つき）
-- 通知：回答/更新を受け取り（将来：メール/Push予定）
-
-![ユーザーQA](https://github.com/user-attachments/assets/3e1f2982-80f7-4ce1-9375-bd3a507e7db5)
-
-### Q&A管理（管理者）
-- 質問一覧（並び替え・検索・ステータスフィルタ）
-- 対応：回答投稿、編集、解決/再開の切替
-- モデレーション：不適切質問の非表示/削除
-- メタ情報：投稿者、日時、記事紐づけ、タグ管理（予定）
-  
-![adminQA](https://github.com/user-attachments/assets/6951c124-f82e-4ce4-afca-a5d85d6aa687)
+FITRAは、Diet / Training / Life の3領域を記録し、AI分析と統合Dashboardによって、今日の身体状態・改善ポイント・成長傾向を可視化するアプリです。
 
 ---
 
+## 目次
 
-## Insomnia/Postman テスト（管理者ファースト / ローカル）
+- [概要](#概要)
+- [本番URL](#本番url)
+- [主な機能](#主な機能)
+- [画面構成](#画面構成)
+- [認証機能](#認証機能)
+- [技術スタック](#技術スタック)
+- [システム構成](#システム構成)
+- [セットアップ](#セットアップ)
+- [環境変数](#環境変数)
+- [デプロイ](#デプロイ)
+- [現在の注意点](#現在の注意点)
+- [今後の改善予定](#今後の改善予定)
 
-この教材は「管理者を先に作る」前提です。まずは Firebase で管理者ユーザーにカスタムクレーム `admin: true` を付与し、IDトークンを取得して `Authorization: Bearer <ID_TOKEN>` で送信します。
+---
 
-1) 動作確認
-- `GET http://localhost:8080/actuator/health` → `{"status":"UP"}`
+## 概要
 
-2) 管理者API（要 Bearer）
-- 記事一覧: `GET http://localhost:8080/api/admin/articles?page=0&size=10`
-- 記事投稿: `POST http://localhost:8080/api/admin/add-article`  
-  - Header: `Authorization: Bearer <ID_TOKEN>`  
-  - Body (multipart/form-data): `image?`, `title`, `content`, …(ArticleRequest)
+FITRAは、トレーニング・食事・生活習慣を個別に記録し、それぞれの分析結果を統合Dashboardに集約するAIフィットネス管理アプリです。
 
-3) 学習者が触れる公開系
-- 記事一覧: `GET http://localhost:8080/api/articles?limit=20`(**未ログイン**)
-- いいね: `POST http://localhost:8080/api/likes/{articleId}`（**要ログイン**）
+主な目的は、単なる記録ではなく、以下を見える化することです。
+
+- 今日の身体状態
+- 食事の改善ポイント
+- トレーニングの成長傾向
+- 睡眠・疲労・ストレスによる回復状態
+- Diet / Training / Life を統合した総合スコア
+
+---
+
+## 本番URL
+
+- Production URL：デプロイ後に記載
+- GitHub Repository：デプロイ後に記載
+
+---
+
+## 主な機能
+
+### 1. 統合Dashboard
+
+Diet / Training / Life の分析結果を統合し、今日の身体状態を表示します。
+
+主な表示内容：
+
+- 総合スコア
+- Diet / Training / Life 別スコア
+- 直近スコア推移
+- 今日の改善優先エリア
+- 今日のアクション提案
+- 保存済み分析データの履歴
+
+---
+
+### 2. Diet AI
+
+食事内容を入力し、AIによって食事評価を行います。
+
+主な機能：
+
+- 食事内容の入力
+- 食品リストの追加
+- 画像アップロードによる食事分析
+- 1食単位のAI評価
+- 1日単位の総合食事評価
+- 食事ログのDB保存
+- Diet履歴Dashboardでスコア推移を確認
+
+導線：
+
+- `/diet/dashboard`：食事履歴・スコア確認
+- `/diet`：食事入力・AI分析
+
+---
+
+### 3. Training AI
+
+トレーニング内容を記録し、成長傾向を可視化します。
+
+主な機能：
+
+- リアルタイム記録
+- Normal記録 Step1〜Step3
+- 種目選択
+- 重量・回数・セット数入力
+- 総ボリューム算出
+- AIコメント生成
+- Training Dashboardで重量推移を表示
+
+導線：
+
+- `/training`：Trainingトップ
+- `/training/live`：リアルタイム記録
+- `/training/normal/step1`：種目選択
+- `/training/normal/step2`：重量・回数・セット数入力
+- `/training/normal/step3`：確認・保存
+- `/training/dashboard`：成長ダッシュボード
+
+---
+
+### 4. Life AI
+
+睡眠・疲労・ストレスから生活スコアを算出します。
+
+主な機能：
+
+- 睡眠時間入力
+- 疲労度入力
+- ストレス度入力
+- 入力済み項目だけで生活スコアを100点換算
+- Sleep / Fatigue / Stress 詳細分析
+- 生活ログのDB保存
+- localStorageによる暫定スコア履歴表示
+
+導線：
+
+- `/life`：生活AIアナリスト
+- `/life/sleep`：睡眠詳細
+- `/life/fatigue`：疲労詳細
+- `/life/stress`：ストレス詳細
+
+---
+
+## 画面構成
+
+### 公開ページ
+
+| URL | 内容 |
+|---|---|
+| `/` | LP / アプリ紹介 / ログイン導線 |
+| `/login` | ログイン |
+| `/register` | 新規登録 |
+
+### ログイン後ページ
+
+| URL | 内容 |
+|---|---|
+| `/dashboard` | 統合Dashboard |
+| `/diet/dashboard` | Diet履歴Dashboard |
+| `/diet` | 食事入力・AI分析 |
+| `/training` | Trainingトップ |
+| `/training/dashboard` | Training成長Dashboard |
+| `/training/normal/step1` | Normal記録 Step1 |
+| `/training/normal/step2` | Normal記録 Step2 |
+| `/training/normal/step3` | Normal記録 Step3 |
+| `/life` | Life AI |
+| `/life/sleep` | 睡眠詳細 |
+| `/life/fatigue` | 疲労詳細 |
+| `/life/stress` | ストレス詳細 |
+
+---
+
+## 認証機能
+
+Firebase Authentication を使用しています。
+
+### 認証方式
+
+- Email / Password 認証
+- Firebase Authentication
+- ログイン状態の永続化
+- ログアウト機能
+
+### 認証保護
+
+ログイン後に利用する主要ページは `AuthGuard` によって保護しています。
+
+対象：
+
+- `/dashboard`
+- `/diet`
+- `/diet/dashboard`
+- `/training`
+- `/training/dashboard`
+- `/life`
+
+未ログイン状態でアクセスした場合は `/login` にリダイレクトします。
+
+---
+
+## 技術スタック
+
+### Frontend
+
+- Next.js
+- React
+- TypeScript
+- Tailwind CSS
+- Recharts
+- Firebase Authentication
+
+### Backend / API
+
+- Next.js API Routes
+- Prisma
+- AI feedback API
+- REST API
+
+### Database
+
+- Prisma ORM
+- TrainingSession
+- TrainingEntry
+- TrainingAnalysis
+- DietAnalysis
+- MealLog
+- LifeLog
+- LifeAnalysis
+
+### Deploy
+
+- Vercel予定
 
 ---
 
 ## システム構成
 
-```sql
+```txt
 [ Browser ]
-     |
-     |  HTTPS (TLS)
-     v
-+--------------------+
-|   Cloudflare DNS   |
-|   & Proxy (SSL)    |
-+--------------------+
-      |                     \
-      | devnav.tech          \ backend.devnav.tech
-      v                       v
-+-------------------+     +----------------------+
-|  Vercel (Frontend)| --> |  Koyeb (Spring API)  |
-|  React / TS       |     |  /actuator/health    |
-+-------------------+     +----------------------+
-                               |
-                               | JDBC (TLS, sslmode=require)
-                               v
-                         +------------------+
-                         | Neon (Postgres)  |
-                         +------------------+
+    |
+    v
+[ Next.js Frontend ]
+    |
+    | Firebase Auth
+    v
+[ Firebase Authentication ]
 
-```
+[ Next.js API Routes ]
+    |
+    | Prisma
+    v
+[ Database ]
 
-- **Frontend**: React (CRA, TypeScript)
-- **Backend**: Spring Boot 3, JPA, Actuator, CORS
-- **DB**: Neon (Postgres, `sslmode=require`)
-- **Infra**: Cloudflare (DNS/SSL), Vercel, Koyeb
-
----
-
-## 主要機能
-- 学習進捗(マイページ)：レベルバー（XP）、カレンダー、アクション履歴
-- コンテンツ：記事読了ボタン、いいね、Q&A、コメント、レビュー点数
-- 管理：記事管理、ユーザー管理（予定含む）
-
----
-
-## セットアップ（最短ルート）
-
-> この教材は「管理者を先に作る」前提です。まず Firebase で管理者ユーザーに `admin: true` を付与しておくこと。
-
-### 前提
-- Node.js 18+ / npm
-- Java 17+ / IntelliJ IDEA
-- Firebase（Email/Password 有効化、管理者ユーザー作成）
-
-### 1) Backend（Spring Initializr → IntelliJで起動）
-1. Spring Initializr で生成（Spring Boot 3, Web, JPA, Validation, Actuator など）
-2. IntelliJ でプロジェクトを開く → `TechApplication` を **dev** プロファイルで実行  
-   - （DB未接続でも起動できる構成ならそのまま。必要なら `application-dev.yml` にローカル設定）
-3. 動作確認  
-   ```bash
-   curl http://localhost:8080/actuator/health
-   # => {"status":"UP"}
-   ```
-
-### 2) Frontend（React CRA）
-1. CRA プロジェクトを開く  
-   ```bash
-   cd frontend
-   npm install
-   npm start
-   ```
-2. API のベースURLはローカル前提（必要になったら `.env.local` に定義）  
-   ```bash
-   # 例：必要になった時だけ作成
-   # REACT_APP_API_URL=http://localhost:8080
-   ```
-
-### 3) 管理者トークンでAPI確認（Insomnia/curl）
-- ログインして **IDトークン** を取得 → `Authorization: Bearer <ID_TOKEN>`
-- 例：記事一覧（管理）：  
-  ```
-  GET http://localhost:8080/api/admin/articles?page=0&size=10
-  Header: Authorization: Bearer <ID_TOKEN>
-  ```
-- 例：記事投稿（管理・画像任意 / multipart）：  
-  ```
-  POST http://localhost:8080/api/admin/add-article
-  Header: Authorization: Bearer <ID_TOKEN>
-  Body: image?, title, content, ...
-  ```
-
-### 備考
-- CORS は本番移行時にだけ調整（例：`https://devnav.tech` を許可）。ローカルは `http://localhost:3000` が通ればOK。
-- デプロイ（Vercel/Koyeb/Neon/Cloudflare）は別セクションで後述。
-
----
-
-## デプロイ
-
-### DNS（Cloudflare）
-- `@` → A → 216.198.79.1（Vercel）
-- `www` → CNAME → cname.vercel-dns.com.
-- `_vercel` → TXT → vc-domain-verify=devnav.tech,xxxxxxxx（Vercel検証用）
-- `backend` → CNAME → <your-koyeb-app>.koyeb.app（API用）
-
-### Vercel（Frontend）
-- 環境変数: `REACT_APP_API_URL=https://backend.devnav.tech`
-- Domains → devnav.tech, www.devnav.tech（Verified後にリダイレクト統一）
-
-### Koyeb（Backend）
-- Secrets: JDBC_URL, DB_USER, DB_PASS, SPRING_PROFILES_ACTIVE=prod
-- Health: `/actuator/health`
-
-### Neon（DB）
-- Connection string: ...neon.tech/<db>?sslmode=require
-- 低権限ユーザー発行推奨
-
----
-
-## API 一覧（抜粋）
-- `GET /api/articles`：記事一覧（クエリ：limit, size）
-- `GET /api/articles/{id}`:記事詳細
-- `POST /api/admin/add-article`（管理者認証）
-- `POST /api/likes/{articleId}`(認証)
-- `GET /api/progress`（XP, 履歴）
-
----
-
-## 開発ロードマップ
-- 認証まわりのE2Eテスト（Playwright）  
-  → ログイン/記事投稿/いいね等の一連の動作を自動テストで保証する。
-- Q&A通知（メール / WebPush）  
-  → 質問への回答があったらユーザーに即通知。学習継続を支援する。
-- 記事検索機能（AI検索）  
-  → タグや全文検索に加え、AI検索で関連記事を高速に引けるようにする。
-- 管理画面のUX改善（shadcn/ui）  
-  → サイドメニューやフォームをモダンUI化し、運営者が使いやすい管理画面に進化。
-
----
-
-## このプロジェクトが解決する課題
-- **教材不足**：React × Spring Boot を日本語で体系的に学べる実務教材が少ない → 接続設計やデプロイを一気通貫で学習可能。
-- **学習の継続性**：進捗管理（Lv/XP、カレンダー）で「どこまでやったか」を可視化し、初心者の挫折を防ぐ。
-- **即戦力化**：本番同等の構成（Vercel/Koyeb/Neon/Cloudflare）を体験でき、案件獲得に直結するスキルを証明可能。
-- **将来性**：管理画面UX改善や通知機能などを拡張予定。教材にとどまらず「実務・学習コミュニティ基盤」として発展可能。
-
----
-
-## 実績・数値
-- 記事数：100本以上（最終200本予定）  
-- 実務経験：2年以上  
-- 本番構成：Vercel / Koyeb / Neon / Cloudflare を利用し、即稼働可能なポートフォリオを構築済み  
+[ AI Feedback Logic ]
+    |
+    v
+Diet / Training / Life Analysis
