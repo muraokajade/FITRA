@@ -5,6 +5,31 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 
+function getRegisterErrorMessage(error: unknown) {
+  const errorCode =
+    typeof error === "object" && error !== null && "code" in error
+      ? String((error as { code?: string }).code)
+      : "";
+
+  if (errorCode === "auth/email-already-in-use") {
+    return "このメールアドレスはすでに登録されています。ログイン画面からお試しください。";
+  }
+
+  if (errorCode === "auth/invalid-email") {
+    return "メールアドレスの形式が正しくありません。";
+  }
+
+  if (errorCode === "auth/weak-password") {
+    return "パスワードは6文字以上で入力してください。";
+  }
+
+  if (errorCode === "auth/network-request-failed") {
+    return "通信に失敗しました。ネットワーク状況を確認して、もう一度お試しください。";
+  }
+
+  return "登録に失敗しました。入力内容を確認して、もう一度お試しください。";
+}
+
 export default function RegisterPage() {
   const router = useRouter();
   const { register } = useAuth();
@@ -21,13 +46,15 @@ export default function RegisterPage() {
 
     try {
       await register(email, password);
-      router.push("/dashboard");
-    } catch {
-      setError("登録に失敗しました。メールアドレスとパスワードを確認してください。");
+      router.push("/");
+    } catch (error) {
+      setError(getRegisterErrorMessage(error));
     } finally {
       setSubmitting(false);
     }
   };
+
+  const isAlreadyRegistered = error.includes("すでに登録されています");
 
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#05060a] px-6 py-12 text-white">
@@ -57,9 +84,18 @@ export default function RegisterPage() {
 
         <form onSubmit={handleRegister} className="mt-8 space-y-4">
           {error && (
-            <p className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-              {error}
-            </p>
+            <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+              <p>{error}</p>
+
+              {isAlreadyRegistered && (
+                <Link
+                  href="/login"
+                  className="mt-3 inline-flex rounded-full border border-blue-400/30 bg-blue-500/10 px-4 py-2 text-xs font-bold text-blue-100 transition hover:bg-blue-500/20"
+                >
+                  ログイン画面へ
+                </Link>
+              )}
+            </div>
           )}
 
           <div>
@@ -102,7 +138,10 @@ export default function RegisterPage() {
 
         <div className="mt-6 text-center text-sm text-slate-400">
           すでにアカウントをお持ちの方は{" "}
-          <Link href="/login" className="font-semibold text-blue-300 underline underline-offset-4">
+          <Link
+            href="/login"
+            className="font-semibold text-blue-300 underline underline-offset-4"
+          >
             ログイン
           </Link>
         </div>

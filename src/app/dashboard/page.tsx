@@ -12,6 +12,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { useAuth } from "@/context/AuthContext";
 
 type TodaySummary = {
   overallScore: number | null;
@@ -286,11 +287,14 @@ export default function DashboardPage() {
   const [dashboardData, setDashboardData] =
     useState<DashboardResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
 
   useEffect(() => {
+    if (!user?.uid) return;
+
     const fetchDashboard = async () => {
       try {
-        const res = await fetch("/api/dashboard", {
+        const res = await fetch(`/api/dashboard?userId=${user?.uid}`, {
           cache: "no-store",
         });
 
@@ -308,7 +312,7 @@ export default function DashboardPage() {
     };
 
     fetchDashboard();
-  }, []);
+  }, [user?.uid]);
 
   const today = dashboardData?.todaySummary ?? emptyTodaySummary;
   const historyItems = dashboardData?.historyItems ?? [];

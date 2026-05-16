@@ -68,41 +68,53 @@ function calculateOverallScore(scores: Array<number | null>) {
 
 
 
-export async function GET() {
-    try {
-        const userId = "demo";
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get("userId");
 
-    /**
-     * 3つのAnalysisを並列で取得する。
-     *
-     * Promise.all を使う理由:
-     * Diet → Training → Life の順番で待つ必要がないため。
-     * 3つ同時にDBへ問い合わせて、全部終わったら次へ進む。
-     */
+    if (!userId) {
+      return NextResponse.json({
+        todaySummary: {
+          overallScore: null,
+          dietScore: null,
+          trainingScore: null,
+          lifeScore: null,
+        },
+        latestAnalyses: {
+          diet: null,
+          training: null,
+          life: null,
+        },
+        historyItems: [],
+        scoreTrend: [],
+        message: "userId is required",
+      });
+    }
+
     const [dietAnalyses, trainingAnalyses, lifeAnalyses] = await Promise.all([
-        prisma.dietAnalysis.findMany({
+      prisma.dietAnalysis.findMany({
         where: { userId },
         orderBy: [{ date: "desc" }, { createdAt: "desc" }],
         take: 7,
-    }),
+      }),
 
-    prisma.trainingAnalysis.findMany({
+      prisma.trainingAnalysis.findMany({
         where: { userId },
         orderBy: [{ date: "desc" }, { createdAt: "desc" }],
         take: 7,
-    }),
+      }),
 
-    prisma.lifeAnalysis.findMany({
+      prisma.lifeAnalysis.findMany({
         where: { userId },
         orderBy: [{ date: "desc" }, { createdAt: "desc" }],
         take: 7,
-        }),
+      }),
     ]);
 
     const dietAnalysis = dietAnalyses[0] ?? null;
     const trainingAnalysis = trainingAnalyses[0] ?? null;
     const lifeAnalysis = lifeAnalyses[0] ?? null;
-
 
     const dietScore = dietAnalysis?.score ?? null;
     const trainingScore = trainingAnalysis?.score ?? null;
@@ -115,12 +127,6 @@ export async function GET() {
     ]);
 
     const historyItems: DashboardHistoryItem[] = [
-      /**
-       * dietAnalysis が存在する場合だけ履歴に追加する。
-       *
-       * 存在しない場合は false / null 相当になり、
-       * 後ろの filter(Boolean) で除外される。
-       */
       dietAnalysis && {
         id: `diet_${dietAnalysis.id}`,
         date: formatDate(dietAnalysis.date),
@@ -129,9 +135,6 @@ export async function GET() {
         score: dietAnalysis.score,
       },
 
-      /**
-       * trainingAnalysis が存在する場合だけ履歴に追加する。
-       */
       trainingAnalysis && {
         id: `training_${trainingAnalysis.id}`,
         date: formatDate(trainingAnalysis.date),
@@ -140,9 +143,6 @@ export async function GET() {
         score: trainingAnalysis.score,
       },
 
-      /**
-       * lifeAnalysis が存在する場合だけ履歴に追加する。
-       */
       lifeAnalysis && {
         id: `life_${lifeAnalysis.id}`,
         date: formatDate(lifeAnalysis.date),
@@ -152,72 +152,65 @@ export async function GET() {
       },
     ].filter(Boolean) as DashboardHistoryItem[];
 
-    //TODO このメソッド知らん
     historyItems.sort((a, b) => b.date.localeCompare(a.date));
-
-    /**
-     * 直近Analysisを日付ごとにまとめて、グラフ用のスコア推移を作る。
-     * diet/training/life は別テーブルなので、date をキーにして1日分へ統合する。
-     */
 
     const trendMap = new Map<string, ScoreTrendItem>();
 
     for (const analysis of dietAnalyses) {
-        const date = formatDate(analysis.date);
+      const date = formatDate(analysis.date);
 
-        ///すでに同じ日付の箱があれば使う。なければ新しく作る。
-        const current = trendMap.get(date) ?? {
-            date,
-            overallScore: null,
-            dietScore: null,
-            trainingScore: null,
-            lifeScore: null,
-        }
-        current.dietScore = analysis.score;
-        trendMap.set(date, current);
-    }
-    for (const analysis of trainingAnalyses) {
-    const date = formatDate(analysis.date);
-
-    const current = trendMap.get(date) ?? {
+      const current = trendMap.get(date) ?? {
         date,
         overallScore: null,
         dietScore: null,
         trainingScore: null,
         lifeScore: null,
-        };
+      };
 
-        current.trainingScore = analysis.score;
-        trendMap.set(date, current);
+      current.dietScore = analysis.score;
+      trendMap.set(date, current);
     }
 
-// LifeAnalysis の直近データを日付ごとの箱に入れる
+    for (const analysis of trainingAnalyses) {
+      const date = formatDate(analysis.date);
+
+      const current = trendMap.get(date) ?? {
+        date,
+        overallScore: null,
+        dietScore: null,
+        trainingScore: null,
+        lifeScore: null,
+      };
+
+      current.trainingScore = analysis.score;
+      trendMap.set(date, current);
+    }
+
     for (const analysis of lifeAnalyses) {
-        const date = formatDate(analysis.date);
+      const date = formatDate(analysis.date);
 
-        const current = trendMap.get(date) ?? {
-            date,
-            overallScore: null,
-            dietScore: null,
-            trainingScore: null,
-            lifeScore: null,
-        };
+      const current = trendMap.get(date) ?? {
+        date,
+        overallScore: null,
+        dietScore: null,
+        trainingScore: null,
+        lifeScore: null,
+      };
 
-        current.lifeScore = analysis.score;
-        trendMap.set(date, current);
+      current.lifeScore = analysis.score;
+      trendMap.set(date, current);
     }
 
     const scoreTrend = Array.from(trendMap.values())
-        .map((item) => ({
-            ...item,
-            overallScore: calculateOverallScore([
-                item.dietScore,
-                item.trainingScore,
-                item.lifeScore
-            ]),
-        }))
-        .sort((a, b) => a.date.localeCompare(b.date));
-
+      .map((item) => ({
+        ...item,
+        overallScore: calculateOverallScore([
+          item.dietScore,
+          item.trainingScore,
+          item.lifeScore,
+        ]),
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
 
     return NextResponse.json({
       todaySummary: {
@@ -226,25 +219,15 @@ export async function GET() {
         trainingScore,
         lifeScore,
       },
-
       latestAnalyses: {
         diet: dietAnalysis,
         training: trainingAnalysis,
         life: lifeAnalysis,
       },
-        historyItems,
-        scoreTrend
+      historyItems,
+      scoreTrend,
     });
-
-
-
-    } catch (error) {
-    /**
-     * DBエラーやPrismaエラーが起きた場合。
-     *
-     * サーバー側には詳細ログを出す。
-     * フロント側には安全なメッセージだけ返す。
-     */
+  } catch (error) {
     console.error("GET /api/dashboard error:", error);
 
     return NextResponse.json(

@@ -21,7 +21,7 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-      router.push("/dashboard");
+      router.push("/");
     } catch {
       setError("ログインに失敗しました。メールアドレスとパスワードを確認してください。");
     } finally {
