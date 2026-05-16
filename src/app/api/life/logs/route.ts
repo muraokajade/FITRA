@@ -157,17 +157,14 @@ export async function POST(req: Request) {
             },
             { status: 200 }
         );
-    } catch (e) {
-  console.error("LIFE_LOG_POST_ERROR", e);
+    } catch(e) {
+        console.error(e);
 
-  return NextResponse.json(
-    {
-      error: "Lifeログの受け取りに失敗しました。",
-      detail: e instanceof Error ? e.message : String(e),
-    },
-    { status: 500 }
-  );
-}
+        return NextResponse.json(
+            { error: "Lifeログ受け取り失敗" },
+            { status: 500 }
+        )
+    }
 }
 
 export async function GET() {

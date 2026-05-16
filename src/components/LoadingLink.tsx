@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { createPortal } from "react-dom";
 
@@ -55,6 +55,7 @@ export default function LoadingLink({
   className,
 }: Props) {
   const router = useRouter();
+  const pathname = usePathname();
   const [loading, setLoading] = useState(false);
   const c = config[theme];
 
@@ -63,11 +64,15 @@ export default function LoadingLink({
 
     if (loading) return;
 
+    if (pathname === href) {
+      return;
+    }
+
     setLoading(true);
 
     setTimeout(() => {
       router.push(href);
-    }, 1600);
+    }, 1200);
   };
 
   return (
@@ -77,6 +82,7 @@ export default function LoadingLink({
       </a>
 
       {loading &&
+        typeof document !== "undefined" &&
         createPortal(
           <div className="fixed inset-0 z-[9999] flex items-center justify-center overflow-hidden bg-[#05060a] text-white">
             <div

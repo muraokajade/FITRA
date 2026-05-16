@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { useLocalStorageState } from "@/hooks/useLocalStorageState";
 import LoadingLink from "@/components/LoadingLink";
 import type { UserLevel, UserGoal } from "@/types/user";
@@ -249,22 +248,21 @@ ${images.length}枚
       const aiFeedback = data.feedback ?? "";
       const detectedName = extractFoodName(aiFeedback);
 
-      const nextFoodItems =
-        detectedName
-          ? Array.from(
-              new Set([
-                ...analysisFoodItems,
-                ...detectedName
-                  .split(/[、,]/)
-                  .map((item) => item.trim())
-                  .filter(Boolean),
-              ])
-            )
-          : analysisFoodItems.length > 0
+      const nextFoodItems = detectedName
+        ? Array.from(
+            new Set([
+              ...analysisFoodItems,
+              ...detectedName
+                .split(/[、,]/)
+                .map((item) => item.trim())
+                .filter(Boolean),
+            ])
+          )
+        : analysisFoodItems.length > 0
           ? analysisFoodItems
           : images.length > 0
-          ? ["画像からの食事"]
-          : [];
+            ? ["画像からの食事"]
+            : [];
 
       const nextPendingMeal: Omit<TempMeal, "id"> = {
         foodItems: nextFoodItems,
@@ -418,54 +416,57 @@ ${dailyText}`
   const isInvalidFeedback = isInvalidFeedbackText(feedback);
 
   return (
-    
-    <main className="min-h-screen bg-gradient-to-b from-orange-950 via-slate-900 to-slate-950 px-4 py-8 text-white">
+    <main className="min-h-screen bg-gradient-to-b from-orange-950 via-slate-900 to-slate-950 px-4 py-6 text-white sm:px-6 sm:py-8">
       <div className="mx-auto max-w-5xl space-y-8">
-        <header className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold tracking-[0.25em] text-emerald-400">
-              FITRA / DIET AI
-            </p>
-            <h1 className="mt-3 text-3xl font-bold tracking-tight md:text-4xl">
-              今日の食事をAIで分析
-            </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300">
-              食べたものを1品ずつ積み上げて、1食単位・1日単位でAIが評価します。
-            </p>
+        <header className="space-y-5">
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold tracking-[0.22em] text-emerald-400 sm:tracking-[0.25em]">
+                FITRA / DIET AI
+              </p>
+
+              <h1 className="mt-3 max-w-[12rem] text-4xl font-bold leading-tight tracking-tight sm:max-w-none sm:text-5xl md:text-4xl">
+                今日の食事をAIで分析
+              </h1>
+
+              <p className="mt-4 max-w-2xl text-base leading-8 text-slate-300 sm:text-sm sm:leading-7">
+                食べたものを1品ずつ積み上げて、1食単位・1日単位でAIが評価します。
+              </p>
+            </div>
+
+            <nav className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-start md:justify-end">
+              <LoadingLink
+                href="/diet/dashboard"
+                theme="diet"
+                className="flex min-h-12 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-center text-xs font-semibold leading-5 text-emerald-200 transition hover:bg-emerald-500/20 sm:px-4"
+              >
+                Diet履歴
+              </LoadingLink>
+
+              <LoadingLink
+                href="/dashboard"
+                theme="diet"
+                className="flex min-h-12 items-center justify-center rounded-full border border-orange-500/30 bg-orange-500/10 px-3 py-2 text-center text-xs font-semibold leading-5 text-orange-200 transition hover:bg-orange-500/20 sm:px-4"
+              >
+                Dashboard
+              </LoadingLink>
+
+              <LoadingLink
+                href="/"
+                theme="home"
+                className="flex min-h-12 items-center justify-center rounded-full border border-slate-600 bg-white/5 px-3 py-2 text-center text-xs leading-5 text-slate-200 transition hover:border-emerald-400 hover:text-emerald-300 sm:px-4"
+              >
+                Home
+              </LoadingLink>
+            </nav>
           </div>
-
-        <div className="flex items-center gap-3">
-          <LoadingLink
-            href="/diet/dashboard"
-            theme="diet"
-            className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-xs font-semibold text-emerald-200 transition hover:bg-emerald-500/20"
-          >
-            Diet履歴
-          </LoadingLink>
-          <LoadingLink
-            href="/dashboard"
-            theme="diet"
-            className="rounded-full border border-orange-500/30 bg-orange-500/10 px-4 py-2 text-xs font-semibold text-orange-200 transition hover:bg-orange-500/20"
-          >
-            ← Dashboard
-          </LoadingLink>
-
-          <LoadingLink
-            href="/"
-            theme="home"
-            className="rounded-full border border-slate-600 bg-white/5 px-4 py-2 text-xs text-slate-200 transition hover:border-emerald-400 hover:text-emerald-300"
-          >
-            ← Home
-          </LoadingLink>
-
-        </div>
         </header>
 
-        <section className="rounded-3xl border border-slate-700 bg-slate-800/70 p-6 shadow-2xl shadow-black/30">
-          <div className="mb-4 flex items-center justify-between">
+        <section className="rounded-3xl border border-slate-700 bg-slate-800/70 p-5 shadow-2xl shadow-black/30 sm:p-6">
+          <div className="mb-4 flex items-start justify-between gap-4">
             <div>
-              <h2 className="text-lg font-semibold">食事入力</h2>
-              <p className="mt-1 text-xs text-slate-400">
+              <h2 className="text-xl font-semibold sm:text-lg">食事入力</h2>
+              <p className="mt-1 text-sm leading-6 text-slate-400 sm:text-xs">
                 納豆・ご飯・卵のように1品ずつ追加してから分析します。
               </p>
             </div>
@@ -473,7 +474,7 @@ ${dailyText}`
             <button
               type="button"
               onClick={handleClear}
-              className="text-xs text-slate-400 hover:text-white"
+              className="shrink-0 text-xs text-slate-400 hover:text-white"
             >
               クリア
             </button>
@@ -483,7 +484,7 @@ ${dailyText}`
             htmlFor="imageUpload"
             className="mb-4 flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-dashed border-emerald-500/50 bg-emerald-950/30 px-4 py-6 text-sm text-emerald-100 transition hover:border-emerald-300 hover:bg-emerald-900/40"
           >
-            📸 食事写真をアップロード
+            食事写真をアップロード
           </label>
 
           <input
@@ -499,9 +500,12 @@ ${dailyText}`
           />
 
           {images.length > 0 && (
-            <div className="mb-4 grid grid-cols-3 gap-3 sm:grid-cols-4">
+            <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
               {images.map((image, index) => (
-                <div key={`${image.name}-${image.lastModified}-${index}`} className="relative">
+                <div
+                  key={`${image.name}-${image.lastModified}-${index}`}
+                  className="relative"
+                >
                   <img
                     src={URL.createObjectURL(image)}
                     alt="preview"
@@ -534,7 +538,7 @@ ${dailyText}`
                   handleAddFoodItem();
                 }
               }}
-              className="flex-1 rounded-xl bg-slate-900 px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-emerald-500/40"
+              className="min-w-0 flex-1 rounded-xl bg-slate-900 px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-emerald-500/40"
               placeholder="食べたもの：例 納豆"
             />
 
@@ -542,7 +546,7 @@ ${dailyText}`
               type="button"
               onClick={handleAddFoodItem}
               disabled={!isValidFoodItem(trimmedFoodItem)}
-              className="rounded-xl bg-slate-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+              className="shrink-0 rounded-xl bg-slate-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
             >
               追加
             </button>
@@ -574,17 +578,17 @@ ${dailyText}`
           />
 
           <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs text-slate-400">
+            <p className="text-xs leading-6 text-slate-400">
               食品：{getAnalysisFoodItems().length}件 / 入力文字数：
               {input.length}文字 / 画像：{images.length}枚
             </p>
 
-            <div className="flex gap-3">
+            <div className="grid grid-cols-2 gap-3 sm:flex">
               <button
                 type="button"
                 onClick={handleAnalyzeSingle}
                 disabled={isLoading || !canAnalyzeSingle}
-                className="rounded-xl bg-emerald-500 px-6 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50 sm:px-6"
               >
                 {isLoading && resultMode !== "daily"
                   ? "AIが分析中..."
@@ -595,7 +599,7 @@ ${dailyText}`
                 type="button"
                 onClick={handleAnalyzeDaily}
                 disabled={isLoading || !canAnalyzeDaily}
-                className="rounded-xl bg-blue-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition hover:bg-blue-400 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-xl bg-blue-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition hover:bg-blue-400 disabled:cursor-not-allowed disabled:opacity-50 sm:px-6"
               >
                 今日の総合評価
               </button>
@@ -603,10 +607,10 @@ ${dailyText}`
           </div>
         </section>
 
-        <section className="rounded-3xl border border-slate-700 bg-slate-800/70 p-6 shadow-2xl shadow-black/30">
+        <section className="rounded-3xl border border-slate-700 bg-slate-800/70 p-5 shadow-2xl shadow-black/30 sm:p-6">
           <div>
-            <h2 className="text-lg font-semibold">AI分析結果</h2>
-            <p className="mt-1 text-xs text-slate-400">
+            <h2 className="text-xl font-semibold sm:text-lg">AI分析結果</h2>
+            <p className="mt-1 text-sm leading-6 text-slate-400 sm:text-xs">
               1食分の評価、または今日の総合評価が表示されます。
             </p>
           </div>
@@ -626,18 +630,18 @@ ${dailyText}`
 
             {feedback && !error && !isLoading && (
               <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-5">
-                <div className="whitespace-pre-wrap text-sm leading-7 text-slate-100">
+                <div className="whitespace-pre-wrap text-sm leading-8 text-slate-100">
                   {feedback.replace(/\*\*/g, "")}
                 </div>
 
-                <div className="mt-4 flex gap-3">
+                <div className="mt-4 grid grid-cols-2 gap-3">
                   {resultMode === "single" &&
                     pendingMeal &&
                     !isInvalidFeedback && (
                       <button
                         type="button"
                         onClick={handleAddTempMeal}
-                        className="flex-1 rounded-xl bg-emerald-500 py-3 text-sm font-semibold text-slate-900 hover:bg-emerald-400"
+                        className="rounded-xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-slate-900 hover:bg-emerald-400"
                       >
                         この食事を今日のログに追加
                       </button>
@@ -648,7 +652,7 @@ ${dailyText}`
                       type="button"
                       onClick={handleSaveDaily}
                       disabled={isSaving}
-                      className="flex-1 rounded-xl bg-emerald-500 py-3 text-sm font-semibold text-slate-900 hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="rounded-xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-slate-900 hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {isSaving ? "保存中..." : "DBに保存する"}
                     </button>
@@ -657,7 +661,7 @@ ${dailyText}`
                   <button
                     type="button"
                     onClick={handleRedo}
-                    className="flex-1 rounded-xl bg-slate-700 py-3 text-sm text-slate-100 hover:bg-slate-600"
+                    className="rounded-xl bg-slate-700 px-4 py-3 text-sm text-slate-100 hover:bg-slate-600"
                   >
                     やり直す
                   </button>
@@ -667,8 +671,10 @@ ${dailyText}`
           </div>
         </section>
 
-        <section className="rounded-3xl border border-yellow-500/30 bg-yellow-950/20 p-6">
-          <h2 className="text-lg font-semibold">今日の一時ログ（未保存）</h2>
+        <section className="rounded-3xl border border-yellow-500/30 bg-yellow-950/20 p-5 sm:p-6">
+          <h2 className="text-xl font-semibold sm:text-lg">
+            今日の一時ログ（未保存）
+          </h2>
 
           {tempMeals.length === 0 ? (
             <p className="mt-2 text-xs text-slate-400">
@@ -682,7 +688,7 @@ ${dailyText}`
                   className="rounded-xl border border-white/10 bg-white/5 p-4"
                 >
                   <div className="flex items-start justify-between gap-4">
-                    <div>
+                    <div className="min-w-0">
                       <div className="text-xs text-slate-400">
                         {index + 1}食目
                       </div>
@@ -706,7 +712,7 @@ ${dailyText}`
                           prev.filter((m) => m.id !== meal.id)
                         )
                       }
-                      className="text-xs text-red-400 hover:text-red-300"
+                      className="shrink-0 text-xs text-red-400 hover:text-red-300"
                     >
                       削除
                     </button>

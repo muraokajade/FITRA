@@ -245,7 +245,7 @@ export default function LivePage() {
   if (!sessionId) return;
 
   await fetch(`/api/sessions/${sessionId}/finish`, {
-    method: "PATCH",
+    method: "PUT",
   });
 
   setSessionId(null);
