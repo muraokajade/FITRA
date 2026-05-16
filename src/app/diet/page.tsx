@@ -7,12 +7,13 @@ import AuthGuard from "@/components/AuthGuard";
 import AppHeader from "@/components/AppHeader";
 import type { UserLevel, UserGoal } from "@/types/user";
 import type { TempMeal } from "@/types/tempMeal";
-
+import { useAuth } from "@/context/AuthContext";
 type ResultMode = "single" | "daily" | null;
 
 const INVALID_PREFIX = "【無効】";
 
 export default function DietPage() {
+const { user } = useAuth();
   const userLevel: UserLevel = "beginner";
   const userGoal: UserGoal = "health";
 
@@ -375,7 +376,7 @@ ${dailyText}`
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          userId: "demo",
+          userId: user?.uid ?? "demo",
           date: new Date().toISOString().slice(0, 10),
           meals: tempMeals.map((meal) => ({
             foodItems: meal.foodItems,

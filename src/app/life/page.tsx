@@ -10,6 +10,7 @@ import type { LifeSummary } from "@/types/life";
 import type { UserLevel, UserGoal } from "@/types/user";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/context/AuthContext";
 
 /**
  * ================================
@@ -105,6 +106,7 @@ type LifeFormState = {
 };
 
 export default function LifePage() {
+  const { user } = useAuth();
   /**
    * ================================
    * 通常入力値
@@ -610,7 +612,7 @@ const recoveryScore =
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        userId: "demo",
+        userId: user?.uid ?? "demo",
         date: new Date().toISOString(),
         sleepHours: sleep,
         fatigue,

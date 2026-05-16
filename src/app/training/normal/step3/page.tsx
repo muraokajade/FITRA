@@ -6,6 +6,7 @@ import AuthGuard from "@/components/AuthGuard";
 import AppHeader from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useAuth } from "@/context/AuthContext";
 
 type Row = {
   name: string;
@@ -25,6 +26,7 @@ const toNum = (v: string) => {
 };
 
 export default function TrainingStep3() {
+  const { user } = useAuth();
   const router = useRouter();
   const [rows, setRows] = React.useState<Row[]>([]);
   const [isSaving, setIsSaving] = React.useState(false);
@@ -84,7 +86,7 @@ export default function TrainingStep3() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          userId: "demo",
+          userId: user?.uid ?? "demo",
           date: new Date().toISOString().slice(0, 10),
           rows,
           level: "beginner",
