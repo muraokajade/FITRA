@@ -41,13 +41,25 @@ export default function AppHeader() {
   return (
     <header className="fixed left-0 top-0 z-50 w-full border-b border-slate-800 bg-[#05060a]/95 text-white shadow-lg shadow-black/30 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
-        <Link
-          href="/dashboard"
-          className="text-lg font-black tracking-[0.18em] text-blue-300"
-          onClick={() => setOpen(false)}
-        >
+    <Link
+      href="/"
+      className="group relative inline-flex items-center gap-3"
+      onClick={() => setOpen(false)}
+    >
+      <span className="relative flex h-9 w-9 items-center justify-center rounded-2xl border border-blue-400/40 bg-blue-500/10 shadow-[0_0_24px_rgba(59,130,246,0.25)] transition group-hover:border-cyan-300/60 group-hover:bg-cyan-400/10">
+        <span className="absolute inset-1 rounded-xl bg-gradient-to-br from-blue-500/30 via-cyan-400/20 to-transparent blur-sm" />
+        <span className="relative text-sm font-black text-blue-200">F</span>
+      </span>
+
+      <span className="flex flex-col leading-none">
+        <span className="bg-gradient-to-r from-blue-200 via-cyan-300 to-blue-500 bg-clip-text text-xl font-black tracking-[0.22em] text-transparent">
           FITRA
-        </Link>
+        </span>
+        <span className="mt-1 hidden text-[9px] font-semibold tracking-[0.28em] text-slate-500 sm:block">
+          AI FITNESS SYSTEM
+        </span>
+      </span>
+    </Link>
 
         <nav className="hidden items-center gap-2 md:flex">
           {navItems.map((item) => (

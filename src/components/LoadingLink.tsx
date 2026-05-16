@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 type Theme = "home" | "training" | "diet" | "life";
@@ -57,7 +57,16 @@ export default function LoadingLink({
   const router = useRouter();
   const pathname = usePathname();
   const [loading, setLoading] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const c = config[theme];
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, []);
 
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
@@ -68,11 +77,15 @@ export default function LoadingLink({
       return;
     }
 
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+
     setLoading(true);
 
-    setTimeout(() => {
+    timerRef.current = setTimeout(() => {
       router.push(href);
-    }, 1200);
+    }, 900);
   };
 
   return (

@@ -6,6 +6,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import AuthGuard from "@/components/AuthGuard";
+import AppHeader from "@/components/AppHeader";
 
 import { useTrainingDraft, type TrainingInputs } from "@/hooks/useTrainingDraft";
 
@@ -170,28 +172,31 @@ const isDisabled =
   });
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-50">
-      <div className="mx-auto flex min-h-screen max-w-5xl items-center px-4">
-        <Card className="mx-auto w-full max-w-3xl border-slate-700 bg-slate-900/80">
+    <AuthGuard>
+      <AppHeader />
+      <div className="pt-16">
+        <main className="min-h-screen bg-gradient-to-br from-black via-zinc-950 to-red-950 px-4 py-8 text-slate-50">
+          <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-5xl items-center">
+        <Card className="mx-auto w-full max-w-3xl border-red-500/30 bg-zinc-900/90">
           <CardContent className="p-6 sm:p-8">
             <Button
               type="button"
               onClick={() => router.replace("/training/normal/step1")}
-              className="mb-4 w-auto bg-transparent px-3 py-1 text-xs text-slate-300 hover:bg-slate-800"
+              className="mb-4 w-auto bg-transparent px-3 py-1 text-xs text-zinc-300 hover:bg-zinc-800"
             >
               ← 戻る
             </Button>
 
-            <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-sky-400">
+            <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-red-300">
               FITRA / TRAINING ANALYZER
             </p>
-            <p className="mb-3 text-[11px] text-slate-400">Step 2 / 3</p>
+            <p className="mb-3 text-[11px] text-zinc-400">Step 2 / 3</p>
 
             <h1 className="mb-2 text-2xl font-bold">
               重量・レップ・セットを入力
             </h1>
 
-            <p className="mb-4 text-sm leading-relaxed text-slate-300">
+            <p className="mb-4 text-sm leading-relaxed text-zinc-300">
               前回値を呼び出して、変更した部分だけ修正できます。
             </p>
 
@@ -199,7 +204,7 @@ const isDisabled =
               <Button
                 type="button"
                 onClick={resetToEmpty}
-                className="border border-slate-700 bg-transparent text-slate-300 hover:bg-slate-800"
+                className="border border-slate-700 bg-transparent text-zinc-300 hover:bg-zinc-800"
               >
                 全部クリア
               </Button>
@@ -208,14 +213,14 @@ const isDisabled =
                 type="button"
                 onClick={handleLoadPrevious}
                 disabled={isLoadingPrevious || selectedExerciseKeys.length === 0}
-                className="bg-sky-500 text-slate-950 hover:bg-sky-400 disabled:opacity-50"
+                className="bg-red-500 text-white hover:bg-red-400 disabled:opacity-50"
               >
                 {isLoadingPrevious ? "読込中..." : "前回値を入力"}
               </Button>
             </div>
 
             {selectedExercises.length === 0 ? (
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-zinc-500">
                 種目が取得できませんでした。ステップ1に戻って選び直してください。
               </p>
             ) : (
@@ -229,7 +234,7 @@ const isDisabled =
                   return (
                     <div
                       key={key}
-                      className="rounded-xl border border-slate-700 bg-slate-900/60 p-4"
+                      className="rounded-xl border border-zinc-800 bg-zinc-900/70 p-4"
                     >
                       <button
                         type="button"
@@ -237,7 +242,7 @@ const isDisabled =
                         className="flex w-full items-center justify-between text-left text-sm font-semibold text-slate-100"
                       >
                         <span>{label}</span>
-                        <span className="text-xs text-slate-400">
+                        <span className="text-xs text-zinc-400">
                           {opened ? "▲" : "▼"}
                         </span>
                       </button>
@@ -245,7 +250,7 @@ const isDisabled =
                       {opened && (
                         <div className="mt-3 grid grid-cols-3 gap-3">
                           <Input
-                            className="border-slate-700 bg-slate-950 text-slate-100"
+                            className="border-zinc-700 bg-zinc-950 text-slate-100"
                             placeholder="重量"
                             type="number"
                             value={toInputValue(v.weight)}
@@ -259,7 +264,7 @@ const isDisabled =
                           />
 
                           <Input
-                            className="border-slate-700 bg-slate-950 text-slate-100"
+                            className="border-zinc-700 bg-zinc-950 text-slate-100"
                             placeholder="rep"
                             type="number"
                             value={toInputValue(v.reps)}
@@ -273,7 +278,7 @@ const isDisabled =
                           />
 
                           <Input
-                            className="border-slate-700 bg-slate-950 text-slate-100"
+                            className="border-zinc-700 bg-zinc-950 text-slate-100"
                             placeholder="set"
                             type="number"
                             value={toInputValue(v.sets)}
@@ -302,7 +307,9 @@ const isDisabled =
             </Button>
           </CardContent>
         </Card>
+          </div>
+        </main>
       </div>
-    </div>
+    </AuthGuard>
   );
 }

@@ -2,6 +2,8 @@
 
 import * as React from "react";
 import LoadingLink from "@/components/LoadingLink";
+import AuthGuard from "@/components/AuthGuard";
+import AppHeader from "@/components/AppHeader";
 
 type FoodItem = {
   id?: string;
@@ -155,7 +157,10 @@ export default function DietDashboardPage() {
   const recentScoreLogs = scoredLogs.slice().reverse().slice(-6);
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-orange-950 via-slate-900 to-slate-950 px-4 py-8 text-white">
+    <AuthGuard>
+      <AppHeader />
+      <div className="pt-16">
+        <main className="min-h-screen bg-gradient-to-b from-orange-950 via-slate-900 to-slate-950 px-4 py-8 text-white">
       <div className="mx-auto max-w-5xl space-y-8">
         <header className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
           <div>
@@ -179,22 +184,6 @@ export default function DietDashboardPage() {
               className="rounded-full bg-emerald-500 px-5 py-2 text-xs font-semibold text-slate-950 transition hover:bg-emerald-400"
             >
               食事を記録する
-            </LoadingLink>
-
-            <LoadingLink
-              href="/dashboard"
-              theme="diet"
-              className="rounded-full border border-orange-500/30 bg-orange-500/10 px-4 py-2 text-xs font-semibold text-orange-200 transition hover:bg-orange-500/20"
-            >
-              Dashboard
-            </LoadingLink>
-
-            <LoadingLink
-              href="/"
-              theme="home"
-              className="rounded-full border border-slate-600 bg-white/5 px-4 py-2 text-xs text-slate-200 transition hover:border-emerald-400 hover:text-emerald-300"
-            >
-              Home
             </LoadingLink>
           </div>
         </header>
@@ -428,6 +417,8 @@ export default function DietDashboardPage() {
           </>
         )}
       </div>
-    </main>
+        </main>
+      </div>
+    </AuthGuard>
   );
 }

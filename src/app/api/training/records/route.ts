@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getAiFeedback } from "@/lib/server/getTrainingFeedback";
 import { rebuildTrainingAnalysis } from "@/lib/training/rebuildTrainingAnalysis";
 import type { TrainingSummary } from "@/types/training";
+import type { Prisma } from "@prisma/client";
 
 type TrainingRecordsRequestBody = {
   userId?: string;
@@ -168,9 +169,19 @@ export async function GET() {
     //
     // 今はPOSTの保存確認を優先するため、既存GETは一旦そのまま残す。
 
-    const normalRecords = await prisma.trainingRecord.findMany({
+    type TrainingSessionWithEntries = Prisma.TrainingSessionGetPayload<{
+      include: {
+        entries: true;
+      };
+    }>;
+
+    const normalSessions: TrainingSessionWithEntries[] = await prisma.trainingSession.findMany({
       where: {
         userId: "demo",
+        mode: "NORMAL",
+      },
+      include: {
+        entries: true,
       },
       orderBy: [{ date: "desc" }, { createdAt: "desc" }],
     });
@@ -181,18 +192,33 @@ export async function GET() {
       },
     });
 
-    const normalRows = normalRecords.map((r) => ({
-      id: String(r.id),
-      userId: r.userId,
-      date: r.date,
-      exercise: r.exercise,
-      weight: r.weight,
-      reps: r.reps,
-      sets: r.sets,
-      volume: r.volume,
-      createdAt: r.createdAt,
-      source: "NORMAL" as const,
-    }));
+    // const normalRows = normalSessions.map((session) => ({
+    //   id: String(r.id),
+    //   userId: r.userId,
+    //   date: r.date,
+    //   exercise: r.exercise,
+    //   weight: r.weight,
+    //   reps: r.reps,
+    //   sets: r.sets,
+    //   volume: r.volume,
+    //   createdAt: r.createdAt,
+    //   source: "NORMAL" as const,
+    // }));
+
+    const normalRows = normalSessions.flatMap((session) =>
+  session.entries.map((entry) => ({
+    id: String(entry.id),
+    userId: session.userId,
+    date: session.date.toISOString().slice(0, 10),
+    exercise: entry.exercise,
+    weight: entry.weight,
+    reps: entry.reps,
+    sets: entry.sets,
+    volume: entry.volume,
+    createdAt: session.createdAt,
+    source: "NORMAL" as const,
+  }))
+);
 
     const liveRows = liveLogs.map((log) => ({
       id: String(log.id),

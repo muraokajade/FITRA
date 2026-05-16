@@ -3,6 +3,8 @@
 import * as React from "react";
 import { useLocalStorageState } from "@/hooks/useLocalStorageState";
 import LoadingLink from "@/components/LoadingLink";
+import AuthGuard from "@/components/AuthGuard";
+import AppHeader from "@/components/AppHeader";
 import type { UserLevel, UserGoal } from "@/types/user";
 import type { TempMeal } from "@/types/tempMeal";
 
@@ -416,7 +418,10 @@ ${dailyText}`
   const isInvalidFeedback = isInvalidFeedbackText(feedback);
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-orange-950 via-slate-900 to-slate-950 px-4 py-6 text-white sm:px-6 sm:py-8">
+    <AuthGuard>
+      <AppHeader />
+      <div className="pt-16">
+        <main className="min-h-screen bg-gradient-to-b from-orange-950 via-slate-900 to-slate-950 px-4 py-6 text-white sm:px-6 sm:py-8">
       <div className="mx-auto max-w-5xl space-y-8">
         <header className="space-y-5">
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -741,6 +746,8 @@ ${dailyText}`
           )}
         </section>
       </div>
-    </main>
+        </main>
+      </div>
+    </AuthGuard>
   );
 }

@@ -3,6 +3,8 @@
 
 import * as React from "react";
 import LoadingLink from "@/components/LoadingLink";
+import AuthGuard from "@/components/AuthGuard";
+import AppHeader from "@/components/AppHeader";
 import type { AiFeedbackRequest } from "@/types/ai";
 import type { LifeSummary } from "@/types/life";
 import type { UserLevel, UserGoal } from "@/types/user";
@@ -360,7 +362,17 @@ export default function LifePage() {
         ? ((10 - stress) / 10) * 30
         : 0;
 
-  const recoveryScore = Math.round(sleepPoint + fatiguePoint + stressPoint);
+const activeMaxScore =
+  (sleepTouched || sleepOverride !== null ? 40 : 0) +
+  (fatigueTouched || fatigueOverride !== null ? 30 : 0) +
+  (stressTouched || stressOverride !== null ? 30 : 0);
+
+const rawLifeScore = sleepPoint + fatiguePoint + stressPoint;
+
+const recoveryScore =
+  activeMaxScore > 0
+    ? Math.round((rawLifeScore / activeMaxScore) * 100)
+    : 0;
 
   const recoveryLabel =
     !hasAnyInput
@@ -666,7 +678,10 @@ export default function LifePage() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-slate-950 via-slate-900 to-emerald-950 px-4 py-8 text-white">
+    <AuthGuard>
+      <AppHeader />
+      <div className="pt-16">
+        <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-slate-950 via-slate-900 to-emerald-950 px-4 py-8 text-white">
       <div className="w-full max-w-6xl space-y-8 rounded-2xl border border-slate-800 bg-slate-900/70 px-6 py-6 shadow-xl md:px-10 md:py-8">
         <header className="flex items-start justify-between gap-4">
           <div className="space-y-3">
@@ -1000,7 +1015,9 @@ export default function LifePage() {
           )}
         </section>
       </div>
-    </main>
+        </main>
+      </div>
+    </AuthGuard>
   );
 }
 

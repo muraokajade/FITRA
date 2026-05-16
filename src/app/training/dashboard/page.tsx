@@ -3,6 +3,8 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import LoadingLink from "@/components/LoadingLink";
+import AuthGuard from "@/components/AuthGuard";
+import AppHeader from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -263,25 +265,11 @@ ${topExercise ? `直近で一番伸びた種目：${topExercise.label}` : ""}
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-black via-zinc-950 to-red-950 px-6 py-12 text-white">
+    <AuthGuard>
+      <AppHeader />
+      <div className="pt-16">
+        <main className="min-h-screen bg-gradient-to-br from-black via-zinc-950 to-red-950 px-6 py-12 text-white">
       <div className="mx-auto max-w-6xl space-y-8">
-        <div className="flex items-center gap-3">
-          <LoadingLink
-            href="/dashboard"
-            theme="training"
-            className="rounded-full border border-red-500/30 bg-red-500/10 px-4 py-2 text-xs font-semibold text-red-200 transition hover:bg-red-500/20"
-          >
-            Dashboard
-          </LoadingLink>
-
-          <LoadingLink
-            href="/"
-            theme="home"
-            className="rounded-full border border-zinc-700 bg-zinc-900/60 px-4 py-2 text-xs font-semibold text-zinc-300 transition hover:bg-zinc-800"
-          >
-            Home
-          </LoadingLink>
-        </div>
 
         <section>
           <div>
@@ -562,6 +550,8 @@ ${topExercise ? `直近で一番伸びた種目：${topExercise.label}` : ""}
           </CardContent>
         </Card>
       </div>
-    </main>
+        </main>
+      </div>
+    </AuthGuard>
   );
 }
