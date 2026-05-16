@@ -261,62 +261,12 @@ export default function Home() {
                       {section.desc}
                     </p>
 
-                    <span
-                      className={`mt-5 inline-flex text-xs font-bold ${section.accent}`}
-                    >
+                    <span className={`mt-5 inline-flex text-xs font-bold ${section.accent}`}>
                       画面を見る
                     </span>
                   </div>
                 </LoadingLink>
               ))}
-            </div>
-          </Reveal>
-        </section>
-
-        <section className="mx-auto max-w-7xl px-5 pb-24 md:px-8">
-          <Reveal>
-            <div className="rounded-[2rem] border border-blue-500/25 bg-[#070b13]/85 p-6 shadow-[0_0_70px_rgba(59,130,246,0.12)] md:p-8">
-              <p className="text-[11px] font-bold tracking-[0.3em] text-blue-300">
-                FITRA SCORE LOGIC
-              </p>
-
-              <h2 className="mt-4 text-3xl font-black tracking-tight md:text-5xl">
-                スコアの根拠も確認できる
-              </h2>
-
-              <p className="mt-5 max-w-4xl text-sm leading-8 text-slate-300 md:text-base">
-                FITRAのスコアは、単なるAIの感覚値ではなく、
-                睡眠・疲労・ストレス・食事・運動負荷などの入力データをもとに算出します。
-                係数や評価基準を確認できるようにし、なぜそのスコアになったのかを説明できる設計を目指しています。
-              </p>
-
-              <div className="mt-8 grid gap-4 md:grid-cols-3">
-                <ScoreLogicMini
-                  title="Diet"
-                  text="栄養バランス、食事内容、不足傾向を評価します。"
-                  className="text-orange-300"
-                />
-
-                <ScoreLogicMini
-                  title="Training"
-                  text="重量、回数、セット数、成長傾向を評価します。"
-                  className="text-red-300"
-                />
-
-                <ScoreLogicMini
-                  title="Life"
-                  text="睡眠、疲労、ストレスから回復状態を評価します。"
-                  className="text-emerald-300"
-                />
-              </div>
-
-              <LoadingLink
-                href="/score-logic"
-                theme="home"
-                className="mt-8 inline-flex rounded-full border border-blue-500/40 bg-blue-500/10 px-6 py-3 text-xs font-bold text-blue-100 transition hover:border-cyan-300/50 hover:bg-cyan-400/10"
-              >
-                FITRAスコアのロジックを見る
-              </LoadingLink>
             </div>
           </Reveal>
         </section>
@@ -417,11 +367,7 @@ export default function Home() {
         .fitra-grid {
           background-image:
             linear-gradient(rgba(59, 130, 246, 0.08) 1px, transparent 1px),
-            linear-gradient(
-              90deg,
-              rgba(59, 130, 246, 0.08) 1px,
-              transparent 1px
-            );
+            linear-gradient(90deg, rgba(59, 130, 246, 0.08) 1px, transparent 1px);
           background-size: 64px 64px;
           animation: fitra-grid-move 18s linear infinite;
         }
@@ -679,24 +625,9 @@ function SectionVisual() {
 
           <div className="mt-5 flex h-28 items-end gap-3">
             <ScoreBar value="40" height="38%" color="bg-red-400" delay={0} />
-            <ScoreBar
-              value="60"
-              height="58%"
-              color="bg-orange-400"
-              delay={120}
-            />
-            <ScoreBar
-              value="95"
-              height="90%"
-              color="bg-emerald-400"
-              delay={240}
-            />
-            <ScoreBar
-              value="75"
-              height="72%"
-              color="bg-yellow-300"
-              delay={360}
-            />
+            <ScoreBar value="60" height="58%" color="bg-orange-400" delay={120} />
+            <ScoreBar value="95" height="90%" color="bg-emerald-400" delay={240} />
+            <ScoreBar value="75" height="72%" color="bg-yellow-300" delay={360} />
           </div>
         </LoadingLink>
 
