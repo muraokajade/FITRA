@@ -1,8 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -41,7 +40,6 @@ const toDraftNumber = (raw: string): number | "" => {
 
 export default function TrainingStep2() {
   const router = useRouter();
-  const params = useSearchParams();
 
 const selectedExercises = React.useMemo<SelectedExercise[]>(() => {
   if (typeof window === "undefined") return [];
