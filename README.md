@@ -148,7 +148,7 @@ FITRAの中心となる画面です。
 スコアロジック画面では、食事・運動・生活スコアの考え方や、総合スコアの計算式を確認できます。  
 単なるAI判定ではなく、どの入力がスコアに影響するのかを説明できるようにするための画面です。
 
-![FITRA Score Logic](./docs/images/score_logic.png)
+![FITRA Score Logic](./docs/images/score-logic.png)
 
 ---
 
