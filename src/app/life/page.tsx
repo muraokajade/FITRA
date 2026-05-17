@@ -1120,6 +1120,10 @@ function LifeInput({
   helper: string;
   onChange: (value: string) => void;
 }) {
+  const [isFocused, setIsFocused] = React.useState(false);
+
+  const displayValue = isFocused && value === 0 ? "" : String(value);
+
   return (
     <div className="space-y-1">
       <label className="block text-xs font-medium text-slate-200">
@@ -1128,10 +1132,19 @@ function LifeInput({
 
       <Input
         type="number"
+        inputMode="decimal"
         min={min}
         max={max}
         step={step}
-        value={value}
+        value={displayValue}
+        onFocus={() => setIsFocused(true)}
+        onBlur={(e) => {
+          setIsFocused(false);
+
+          if (e.target.value === "") {
+            onChange("0");
+          }
+        }}
         onChange={(e) => onChange(e.target.value)}
         className="border-slate-700 bg-slate-900/80 text-sm"
       />

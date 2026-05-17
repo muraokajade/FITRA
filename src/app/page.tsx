@@ -121,10 +121,12 @@ function getTriangleColor(score: number) {
 export default function Home() {
   const router = useRouter();
   const { user, logout } = useAuth();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
     clearDietTempStorage();
     await logout();
+    setIsMobileMenuOpen(false);
     router.push("/login");
   };
 
@@ -133,10 +135,10 @@ export default function Home() {
       <HomeEffects />
 
       <div className="relative z-10">
-        <header className="mx-auto flex w-full max-w-7xl items-center justify-between px-5 py-5 md:px-8">
+        <header className="relative mx-auto flex w-full max-w-7xl items-center justify-between px-5 py-5 md:px-8">
           <HomeLogo />
 
-          <div className="flex items-center gap-2">
+          <div className="hidden items-center gap-2 sm:flex">
             {user ? (
               <>
                 <LoadingLink
@@ -168,22 +170,103 @@ export default function Home() {
                 <LoadingLink
                   href="/register"
                   theme="home"
-                  className="hidden rounded-full border border-cyan-300/40 bg-cyan-400/10 px-4 py-2 text-xs font-bold text-cyan-100 transition hover:bg-cyan-400/20 sm:inline-flex"
+                  className="rounded-full border border-cyan-300/40 bg-cyan-400/10 px-4 py-2 text-xs font-bold text-cyan-100 transition hover:bg-cyan-400/20"
                 >
                   新規登録
                 </LoadingLink>
               </>
             )}
           </div>
+
+          <button
+            type="button"
+            onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+            className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-blue-400/40 bg-blue-500/10 text-blue-100 shadow-[0_0_24px_rgba(59,130,246,0.18)] transition hover:border-cyan-300/60 hover:bg-cyan-400/10 sm:hidden"
+            aria-label="メニューを開く"
+            aria-expanded={isMobileMenuOpen}
+          >
+            <span className="flex flex-col gap-1.5">
+              <span className="block h-0.5 w-5 rounded-full bg-current" />
+              <span className="block h-0.5 w-5 rounded-full bg-current" />
+              <span className="block h-0.5 w-5 rounded-full bg-current" />
+            </span>
+          </button>
+
+          {isMobileMenuOpen && (
+            <div className="absolute right-5 top-[74px] z-50 w-[min(82vw,260px)] rounded-3xl border border-blue-400/25 bg-[#07111f]/95 p-4 shadow-[0_0_50px_rgba(59,130,246,0.22)] backdrop-blur sm:hidden">
+              <p className="px-2 text-[10px] font-bold tracking-[0.24em] text-blue-300">
+                MENU
+              </p>
+
+              <div className="mt-3 grid gap-2">
+                {user ? (
+                  <>
+                    <LoadingLink
+                      href="/dashboard"
+                      theme="home"
+                      className="rounded-2xl border border-blue-400/30 bg-blue-500/10 px-4 py-3 text-sm font-black text-blue-100 transition hover:bg-blue-500/20"
+                    >
+                      Dashboardを開く
+                    </LoadingLink>
+
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="rounded-2xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-left text-sm font-black text-red-200 transition hover:bg-red-500/20"
+                    >
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <LoadingLink
+                      href="/login"
+                      theme="home"
+                      className="rounded-2xl border border-blue-400/30 bg-blue-500/10 px-4 py-3 text-sm font-black text-blue-100 transition hover:bg-blue-500/20"
+                    >
+                      ログイン
+                    </LoadingLink>
+
+                    <LoadingLink
+                      href="/register"
+                      theme="home"
+                      className="rounded-2xl border border-cyan-300/40 bg-cyan-400/10 px-4 py-3 text-sm font-black text-cyan-100 transition hover:bg-cyan-400/20"
+                    >
+                      新規登録
+                    </LoadingLink>
+                  </>
+                )}
+
+                <Link
+                  href={GITHUB_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-900/80 px-4 py-3 text-sm font-bold text-slate-100 transition hover:bg-slate-800"
+                >
+                  <GitHubIcon className="h-4 w-4" />
+                  GitHub
+                </Link>
+
+                <Link
+                  href={README_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-2xl border border-cyan-400/30 bg-cyan-500/10 px-4 py-3 text-sm font-bold text-cyan-100 transition hover:bg-cyan-500/20"
+                >
+                  READMEを見る
+                </Link>
+              </div>
+            </div>
+          )}
         </header>
 
-        <section className="mx-auto grid max-w-7xl items-stretch gap-12 px-5 pb-20 pt-14 md:grid-cols-[0.9fr_1.1fr] md:px-8 md:pb-24 md:pt-20">
-          <div className="flex h-full min-h-[620px] flex-col justify-center">
+        <section className="mx-auto grid max-w-7xl items-center gap-10 px-5 pb-16 pt-10 sm:px-6 md:px-8 lg:grid-cols-[0.88fr_1.12fr] lg:gap-12 lg:pb-24 lg:pt-20">
+          <div className="flex flex-col items-center justify-center text-center lg:min-h-[620px] lg:items-start lg:text-left">
             <div className="inline-flex w-fit rounded-full border border-blue-400/30 bg-blue-500/10 px-4 py-2 text-[10px] font-bold tracking-[0.28em] text-blue-200">
               DIET / TRAINING / LIFE
             </div>
 
-            <h1 className="mt-8 text-5xl font-black leading-[0.95] tracking-tight md:text-7xl">
+            <h1 className="mt-7 text-[3.25rem] font-black leading-[0.98] tracking-tight sm:text-6xl lg:text-7xl">
               今日の身体を、
               <br />
               <span className="bg-gradient-to-r from-blue-200 via-cyan-300 to-blue-600 bg-clip-text text-transparent">
@@ -191,19 +274,19 @@ export default function Home() {
               </span>
             </h1>
 
-            <p className="mt-7 max-w-xl text-sm leading-8 text-slate-300 md:text-base">
+            <p className="mt-6 max-w-xl text-sm leading-8 text-slate-300 md:text-base">
               FITRAは、食事・運動・生活を別々に見るだけではありません。
               3つの状態を同じ土台で並行評価し、今日の身体状態を総合スコアとして可視化します。
             </p>
 
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <div className="mt-8 flex w-full flex-row flex-nowrap items-center justify-center gap-2 lg:justify-start">
               <Link
                 href={GITHUB_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-slate-600/80 bg-slate-900/90 px-6 py-3 text-sm font-black text-white shadow-[0_0_24px_rgba(15,23,42,0.55)] transition hover:border-cyan-300/60 hover:bg-slate-800"
+                className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-full border border-slate-600/80 bg-slate-900/90 px-3 py-3 text-xs font-black text-white shadow-[0_0_24px_rgba(15,23,42,0.55)] transition hover:border-cyan-300/60 hover:bg-slate-800 sm:flex-none sm:px-6 sm:text-sm"
               >
-                <GitHubIcon className="h-5 w-5" />
+                <GitHubIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                 GitHub
               </Link>
 
@@ -211,21 +294,21 @@ export default function Home() {
                 href={README_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-cyan-400/40 bg-cyan-500/10 px-6 py-3 text-sm font-black text-cyan-100 shadow-[0_0_24px_rgba(34,211,238,0.14)] transition hover:bg-cyan-500/20"
+                className="inline-flex min-h-11 flex-1 items-center justify-center rounded-full border border-cyan-400/40 bg-cyan-500/10 px-3 py-3 text-xs font-black text-cyan-100 shadow-[0_0_24px_rgba(34,211,238,0.14)] transition hover:bg-cyan-500/20 sm:flex-none sm:px-6 sm:text-sm"
               >
-                READMEを見る
+                README
               </Link>
 
               <LoadingLink
                 href="/score-logic"
                 theme="home"
-                className="inline-flex min-h-12 items-center justify-center rounded-full border border-blue-400/40 bg-blue-500/10 px-6 py-3 text-sm font-black text-blue-100 transition hover:bg-blue-500/20"
+                className="inline-flex min-h-11 flex-1 items-center justify-center rounded-full border border-blue-400/40 bg-blue-500/10 px-3 py-3 text-xs font-black text-blue-100 transition hover:bg-blue-500/20 sm:flex-none sm:px-6 sm:text-sm"
               >
                 スコア根拠
               </LoadingLink>
             </div>
 
-            <div className="mt-10">
+            <div className="mt-9 flex w-full justify-center lg:justify-start">
               <LoadingLink
                 href={user ? "/dashboard" : "/login"}
                 theme="home"
@@ -247,7 +330,9 @@ export default function Home() {
             </p>
           </div>
 
-          <HomeBalanceVisual />
+          <div className="mt-2 lg:mt-0">
+            <HomeBalanceVisual />
+          </div>
         </section>
 
         <section className="mx-auto max-w-7xl px-5 pb-24 md:px-8">
