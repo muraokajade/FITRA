@@ -2,204 +2,188 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+const USER_ID = "M7L3q7e6MObQXccF8SneQa0XteD3";
+
+const seedScores = [
+  {
+    daysAgo: 6,
+    diet: 62,
+    training: 68,
+    life: 58,
+    summary: "記録開始。全体的に改善余地あり。",
+  },
+  {
+    daysAgo: 5,
+    diet: 66,
+    training: 72,
+    life: 61,
+    summary: "食事と運動が少し安定。",
+  },
+  {
+    daysAgo: 4,
+    diet: 71,
+    training: 76,
+    life: 64,
+    summary: "トレーニングの継続で上昇傾向。",
+  },
+  {
+    daysAgo: 3,
+    diet: 68,
+    training: 78,
+    life: 60,
+    summary: "疲労がやや残り、生活スコアが低下。",
+  },
+  {
+    daysAgo: 2,
+    diet: 74,
+    training: 82,
+    life: 66,
+    summary: "食事バランスと運動量が改善。",
+  },
+  {
+    daysAgo: 1,
+    diet: 76,
+    training: 86,
+    life: 70,
+    summary: "全体的に安定。成長傾向あり。",
+  },
+  {
+    daysAgo: 0,
+    diet: 79,
+    training: 88,
+    life: 73,
+    summary: "身体状態は良好。継続しやすい状態。",
+  },
+];
+
+function getDate(daysAgo: number) {
+  const date = new Date();
+  date.setDate(date.getDate() - daysAgo);
+  date.setHours(9, 0, 0, 0);
+  return date;
+}
+
 async function main() {
-  // =========================
-  // 全削除
-  // =========================
 
-  await prisma.trainingRow.deleteMany();
-  await prisma.trainingRecord.deleteMany();
-  await prisma.exerciseLog.deleteMany();
+  console.log("Seeding dashboard score trend...");
 
-  // =========================================================
-  // NORMAL
-  // =========================================================
+  for (const item of seedScores) {
+    const date = getDate(item.daysAgo);
 
-  await prisma.trainingRecord.createMany({
-    data: [
-      // =========================
-      // ベンチプレス
-      // =========================
-
-      {
-        userId: "demo",
-        date: "2026-05-01",
-        exercise: "ベンチプレス",
-        weight: 80,
-        reps: 8,
-        sets: 3,
-        volume: 1920,
-        createdAt: new Date("2026-05-01"),
-      },
-
-      {
-        userId: "demo",
-        date: "2026-05-03",
-        exercise: "ベンチプレス",
-        weight: 82.5,
-        reps: 8,
-        sets: 3,
-        volume: 1980,
-        createdAt: new Date("2026-05-03"),
-      },
-
-      // LIVEと同日なので除外される想定
-      {
-        userId: "demo",
-        date: "2026-05-06",
-        exercise: "ベンチプレス",
-        weight: 90,
-        reps: 5,
-        sets: 3,
-        volume: 1350,
-        createdAt: new Date("2026-05-06"),
-      },
-
-      // =========================
-      // スクワット
-      // =========================
-
-      {
-        userId: "demo",
-        date: "2026-05-01",
-        exercise: "スクワット",
-        weight: 100,
-        reps: 5,
-        sets: 3,
-        volume: 1500,
-        createdAt: new Date("2026-05-01"),
-      },
-
-      {
-        userId: "demo",
-        date: "2026-05-03",
-        exercise: "スクワット",
-        weight: 102.5,
-        reps: 5,
-        sets: 3,
-        volume: 1537.5,
-        createdAt: new Date("2026-05-03"),
-      },
-
-      {
-        userId: "demo",
-        date: "2026-05-05",
-        exercise: "スクワット",
-        weight: 102.5,
-        reps: 6,
-        sets: 3,
-        volume: 1845,
-        createdAt: new Date("2026-05-05"),
-      },
-
-      {
-        userId: "demo",
-        date: "2026-05-07",
-        exercise: "スクワット",
-        weight: 105,
-        reps: 6,
-        sets: 3,
-        volume: 1890,
-        createdAt: new Date("2026-05-07"),
-      },
-    ],
-  });
-
-  // =========================================================
-  // LIVE
-  // =========================================================
-
-  // =========================
-  // ベンチプレス
-  // 2026-05-06 は NORMAL より優先される
-  // =========================
-
-  for (let i = 1; i <= 3; i++) {
-    await prisma.exerciseLog.create({
+    const mealLog = await prisma.mealLog.create({
       data: {
-        sessionId: 100,
-        exerciseName: "ベンチプレス",
-        weight: 85,
-        reps: 8,
-        setNumber: i,
-        volume: 680,
-        createdAt: new Date("2026-05-06"),
-        memo: null,
+        name: `Seed meal ${item.daysAgo}`,
+        mealType: "day",
+        timestamp: date,
+        score: item.diet,
+        totalCalories: 2100,
+        totalProtein: 120,
+        totalFat: 55,
+        totalCarbs: 260,
       },
     });
-  }
 
-  // =========================
-  // ラットプルダウン
-  // LIVEのみ
-  // =========================
-
-  for (let i = 1; i <= 3; i++) {
-    await prisma.exerciseLog.create({
+    await prisma.dietAnalysis.create({
       data: {
-        sessionId: 101,
-        exerciseName: "ラットプルダウン",
-        weight: 55,
-        reps: 10,
-        setNumber: i,
-        volume: 550,
-        createdAt: new Date("2026-05-02"),
-        memo: null,
+        mealLogId: mealLog.id,
+        userId: USER_ID,
+        date,
+        score: item.diet,
+        summary: `食事スコア ${item.diet}`,
+        feedback:
+          "栄養バランスを確認し、たんぱく質と炭水化物の摂取量を意識するとさらに安定します。",
       },
     });
-  }
 
-  for (let i = 1; i <= 3; i++) {
-    await prisma.exerciseLog.create({
+    const trainingSession = await prisma.trainingSession.create({
       data: {
-        sessionId: 102,
-        exerciseName: "ラットプルダウン",
-        weight: 57.5,
-        reps: 10,
-        setNumber: i,
-        volume: 575,
-        createdAt: new Date("2026-05-04"),
-        memo: null,
+        userId: USER_ID,
+        date,
+        mode: "NORMAL",
+        totalVolume: 12000 + item.daysAgo * 300,
+        memo: "READMEスクリーンショット用のseedデータ",
       },
     });
-  }
 
-  for (let i = 1; i <= 3; i++) {
-    await prisma.exerciseLog.create({
+    await prisma.trainingEntry.createMany({
+      data: [
+        {
+          sessionId: trainingSession.id,
+          exercise: "ベンチプレス",
+          weight: 70 + (6 - item.daysAgo),
+          reps: 8,
+          sets: 3,
+          volume: (70 + (6 - item.daysAgo)) * 8 * 3,
+        },
+        {
+          sessionId: trainingSession.id,
+          exercise: "スクワット",
+          weight: 100 + (6 - item.daysAgo) * 2,
+          reps: 8,
+          sets: 3,
+          volume: (100 + (6 - item.daysAgo) * 2) * 8 * 3,
+        },
+      ],
+    });
+
+    await prisma.trainingAnalysis.create({
       data: {
-        sessionId: 103,
-        exerciseName: "ラットプルダウン",
-        weight: 60,
-        reps: 10,
-        setNumber: i,
-        volume: 600,
-        createdAt: new Date("2026-05-06"),
-        memo: null,
+        sessionId: trainingSession.id,
+        userId: USER_ID,
+        date,
+        score: item.training,
+        totalVolume: 12000 + item.daysAgo * 300,
+        topExercise: "スクワット",
+        summary: `トレーニングスコア ${item.training}`,
+        feedback:
+          "重量と総ボリュームは安定しており、継続的な成長傾向が見られます。",
       },
     });
-  }
 
-  for (let i = 1; i <= 3; i++) {
-    await prisma.exerciseLog.create({
+    const lifeLog = await prisma.lifeLog.create({
       data: {
-        sessionId: 104,
-        exerciseName: "ラットプルダウン",
-        weight: 60,
-        reps: 11,
-        setNumber: i,
-        volume: 660,
-        createdAt: new Date("2026-05-07"),
-        memo: null,
+        userId: USER_ID,
+        date,
+        sleepHours: 6.5 + (item.life >= 70 ? 0.5 : 0),
+        fatigue: item.life >= 70 ? 3 : 5,
+        stress: item.life >= 70 ? 3 : 5,
+        memo: "READMEスクリーンショット用のseedデータ",
       },
     });
+
+    await prisma.lifeAnalysis.create({
+      data: {
+        lifeLogId: lifeLog.id,
+        userId: USER_ID,
+        date,
+        score: item.life,
+        label:
+          item.life >= 70
+            ? "攻めてもよい状態"
+            : item.life >= 50
+              ? "調整しながら進める"
+              : "回復を優先する",
+        sleepPoint: item.life >= 70 ? 36 : 30,
+        fatiguePoint: item.life >= 70 ? 22 : 18,
+        stressPoint: item.life >= 70 ? 20 : 15,
+        summary: `生活スコア ${item.life}`,
+        feedback:
+          "睡眠・疲労・ストレスのバランスを確認し、回復状態を見ながら運動強度を調整します。",
+      },
+    });
+
+    console.log(
+      `Seeded ${date.toISOString().slice(0, 10)} / diet:${item.diet}, training:${item.training}, life:${item.life}`
+    );
   }
 
-  console.log("4days mixed seed completed");
+  console.log("Done.");
 }
 
 main()
-  .catch((e) => {
-    console.error(e);
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
   })
   .finally(async () => {
     await prisma.$disconnect();
