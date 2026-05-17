@@ -267,10 +267,10 @@ export default function Home() {
             </div>
 
             <h1 className="mt-7 text-[3.25rem] font-black leading-[0.98] tracking-tight sm:text-6xl lg:text-7xl">
-              今日の身体を、
+              身体の感覚を、
               <br />
               <span className="bg-gradient-to-r from-blue-200 via-cyan-300 to-blue-600 bg-clip-text text-transparent">
-                3軸で掴む。
+                データで解析
               </span>
             </h1>
 
